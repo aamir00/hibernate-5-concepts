@@ -8,14 +8,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import org.hibernate.boot.Metadata;
-import org.hibernate.tool.api.metadata.MetadataConstants;
-import org.hibernate.tool.api.metadata.MetadataDescriptor;
-import org.hibernate.tool.api.metadata.MetadataDescriptorFactory;
-import org.hibernate.tool.api.reveng.RevengSettings;
-import org.hibernate.tool.api.reveng.RevengStrategy;
-import org.hibernate.tool.internal.reveng.strategy.DefaultStrategy;
-import org.hibernate.tool.internal.reveng.strategy.OverrideRepository;
-import org.hibernate.tool.internal.reveng.strategy.TableFilter;
+import org.hibernate.tool.reveng.api.metadata.MetadataConstants;
+import org.hibernate.tool.reveng.api.metadata.MetadataDescriptor;
+import org.hibernate.tool.reveng.api.metadata.MetadataDescriptorFactory;
+import org.hibernate.tool.reveng.api.core.RevengSettings;
+import org.hibernate.tool.reveng.api.core.RevengStrategy;
+import org.hibernate.tool.reveng.internal.core.strategy.DefaultStrategy;
+import org.hibernate.tool.reveng.internal.core.strategy.OverrideRepository;
+import org.hibernate.tool.reveng.internal.core.strategy.TableFilter;
 import org.hibernate.type.StandardBasicTypes;
 
 /**
@@ -29,7 +29,9 @@ import org.hibernate.type.StandardBasicTypes;
  * -> MetadataDescriptorFactory.createReverseEngineeringDescriptor(strategy, properties).createMetadata()
  * </pre>
  * On Tools 6 the 5.x {@code org.hibernate.cfg.reveng} classes live in {@code org.hibernate.tool.api.reveng}
- * (interfaces, value objects) and {@code org.hibernate.tool.internal.reveng.strategy} (implementations).
+ * (interfaces, value objects) and {@code org.hibernate.tool.internal.reveng.strategy} (implementations); from 7.4
+ * ({@code hibernate-reveng}) in {@code org.hibernate.tool.reveng.api.core} and
+ * {@code org.hibernate.tool.reveng.internal.core.strategy}.
  *
  * The Mains use this helper; {@code RevengStrategyMain} walks through each step with output.
  */

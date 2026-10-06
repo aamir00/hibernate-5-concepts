@@ -7,13 +7,11 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import org.hibernate.boot.internal.MetadataImpl;
-import org.hibernate.boot.registry.internal.StandardServiceRegistryImpl;
-import org.hibernate.tool.api.export.ExporterConstants;
-import org.hibernate.tool.api.metadata.MetadataDescriptor;
-import org.hibernate.tool.internal.export.common.AbstractExporter;
-import org.hibernate.tool.internal.export.common.GenericExporter;
-import org.hibernate.tool.internal.export.java.POJOClass;
+import org.hibernate.tool.reveng.api.export.ExporterConstants;
+import org.hibernate.tool.reveng.api.metadata.MetadataDescriptor;
+import org.hibernate.tool.reveng.internal.export.common.AbstractExporter;
+import org.hibernate.tool.reveng.internal.export.common.GenericExporter;
+import org.hibernate.tool.reveng.internal.export.java.POJOClass;
 
 import h5.concepts.support.DemoMetaDataDialect;
 import h5.concepts.support.Out;
@@ -29,6 +27,7 @@ import h5.concepts.support.DemoDatabase;
  * {@link SummaryExporter} below shows both methods, and which one Tools actually calls.
  * <p>
  * Tools 6 moved the exporters from {@code org.hibernate.tool.hbm2x} to {@code org.hibernate.tool.internal.export.*}
+ * ({@code org.hibernate.tool.reveng.internal.export.*} since Tools moved into ORM as {@code hibernate-reveng} in 7.4)
  * and replaced their setters with properties keyed by {@link ExporterConstants}.
  */
 public class ExporterMain {
@@ -52,7 +51,9 @@ public class ExporterMain {
         Out.kv("DESTINATION_FOLDER", ((File) properties.get(ExporterConstants.DESTINATION_FOLDER)).getAbsolutePath());
         Out.note("CHANGED in 6: the setters (setOutputDirectory, setMetadataDescriptor, setTemplatePath, setTemplateName, "
             + "setFilePattern, setForEach) were removed -> exporter.getProperties().put(ExporterConstants.X, value); "
-            + "getOutputDirectory()/getTemplateName() are now protected and getFilePattern() private.");
+            + "getOutputDirectory()/getTemplateName() are now protected and getFilePattern() private. "
+            + "CHANGED in 7.4: the exporters live in org.hibernate.tool.reveng.internal.export.* (artifact hibernate-reveng); "
+            + "the ExporterConstants key strings are unchanged.");
 
         Out.row("56", "GenericExporter — template + file pattern, for-each entity");
         properties.put(ExporterConstants.TEMPLATE_NAME, "templates/entity-summary.ftl");
@@ -61,11 +62,10 @@ public class ExporterMain {
         Out.kv("TEMPLATE_NAME", properties.get(ExporterConstants.TEMPLATE_NAME));
         Out.kv("FILE_PATTERN", properties.get(ExporterConstants.FILE_PATTERN));
         Out.line("exporter.start() ...");
-        try {
-            exporter.start();
-        } finally {
-            ((StandardServiceRegistryImpl) ((MetadataImpl) exporter.getMetadata()).getBootstrapContext().getServiceRegistry()).destroy();
-        }
+        exporter.start();
+        Out.note("CHANGED in 7.4: start() ends with stop(), which closes the service registry the exporter's Metadata was "
+            + "built with. Up to 7.3 that registry had to be destroyed by hand through MetadataImpl.getBootstrapContext(); "
+            + "now getMetadata() after start() would reverse-engineer the schema again. start(false) skips the stop.");
         Out.kv("resolveFilename(POJOClass) calls", exporter.pojoOverrideCalls);
         Out.kv("resolveFilename(String) calls", exporter.stringOverloadCalls
             + "   (an overload, not an override: Tools never calls it — same as WMGenericExporter)");

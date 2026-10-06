@@ -3,10 +3,10 @@ package h5.concepts.support;
 import java.util.Properties;
 
 import org.hibernate.mapping.ForeignKey;
-import org.hibernate.tool.api.reveng.RevengStrategy;
-import org.hibernate.tool.api.reveng.TableIdentifier;
-import org.hibernate.tool.internal.reveng.strategy.DelegatingStrategy;
-import org.hibernate.tool.internal.util.NameConverter;
+import org.hibernate.tool.reveng.api.core.RevengStrategy;
+import org.hibernate.tool.reveng.api.core.TableIdentifier;
+import org.hibernate.tool.reveng.internal.core.strategy.DelegatingStrategy;
+import org.hibernate.tool.reveng.internal.util.NameConverter;
 
 /**
  * [Rows 41, 43, 47, 53] A {@link DelegatingStrategy} (5.x: {@code DelegatingReverseEngineeringStrategy}): every

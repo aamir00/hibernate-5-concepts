@@ -18,12 +18,12 @@ import org.hibernate.dialect.OracleDialect;
 import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.engine.jdbc.spi.JdbcServices;
 import org.hibernate.exception.spi.SQLExceptionConverter;
-import org.hibernate.tool.api.reveng.RevengDialect;
-import org.hibernate.tool.api.reveng.RevengDialectFactory;
-import org.hibernate.tool.internal.reveng.dialect.AbstractMetaDataDialect;
-import org.hibernate.tool.internal.reveng.dialect.JDBCMetaDataDialect;
-import org.hibernate.tool.internal.reveng.dialect.MySQLMetaDataDialect;
-import org.hibernate.tool.internal.reveng.dialect.ResultSetIterator;
+import org.hibernate.tool.reveng.api.core.RevengDialect;
+import org.hibernate.tool.reveng.api.core.RevengDialectFactory;
+import org.hibernate.tool.reveng.internal.core.dialect.AbstractMetaDataDialect;
+import org.hibernate.tool.reveng.internal.core.dialect.JDBCMetaDataDialect;
+import org.hibernate.tool.reveng.internal.core.dialect.MySQLMetaDataDialect;
+import org.hibernate.tool.reveng.internal.core.dialect.ResultSetIterator;
 
 import h5.concepts.support.DemoDatabase;
 import h5.concepts.support.DemoMetaDataDialect;
@@ -42,7 +42,8 @@ import h5.concepts.support.RevengSupport;
  * Tools 6: {@code org.hibernate.cfg.reveng.dialect.MetaDataDialect} -> {@code org.hibernate.tool.api.reveng.RevengDialect},
  * the implementations moved to {@code org.hibernate.tool.internal.reveng.dialect}, {@code MetaDataDialectFactory} ->
  * {@code RevengDialectFactory}, and {@code configure(ReverseEngineeringRuntimeInfo)} -> {@code configure(ConnectionProvider)}
- * (the runtime-info class and the dialects' {@code SQLExceptionConverter} are gone).
+ * (the runtime-info class and the dialects' {@code SQLExceptionConverter} are gone). From 7.4 ({@code hibernate-reveng})
+ * they live in {@code org.hibernate.tool.reveng.api.core} and {@code org.hibernate.tool.reveng.internal.core.dialect}.
  */
 public class MetaDataDialectMain {
 
@@ -76,6 +77,8 @@ public class MetaDataDialectMain {
         Properties withProperty = RevengSupport.properties(DemoMetaDataDialect.class);
         Out.kv("HSQLDialect, property = DemoMetaDataDialect",
             Out.simpleName(RevengDialectFactory.createMetaDataDialect(new HSQLDialect(), withProperty)));
+        Out.note("CHANGED in 7.4: RevengDialect/RevengDialectFactory moved to org.hibernate.tool.reveng.api.core and the "
+            + "metadata dialects to org.hibernate.tool.reveng.internal.core.dialect (Tools is now ORM's hibernate-reveng).");
     }
 
     static void jdbcMetaDataDialect(ConnectionProvider connectionProvider) {

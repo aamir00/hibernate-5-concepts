@@ -10,16 +10,16 @@ import org.hibernate.mapping.ForeignKey;
 import org.hibernate.mapping.PersistentClass;
 import org.hibernate.mapping.Property;
 import org.hibernate.mapping.Table;
-import org.hibernate.tool.api.metadata.MetadataConstants;
-import org.hibernate.tool.api.metadata.MetadataDescriptor;
-import org.hibernate.tool.api.reveng.RevengSettings;
-import org.hibernate.tool.api.reveng.RevengStrategy;
-import org.hibernate.tool.api.reveng.TableIdentifier;
-import org.hibernate.tool.internal.reveng.strategy.DefaultStrategy;
-import org.hibernate.tool.internal.reveng.strategy.OverrideRepository;
-import org.hibernate.tool.internal.reveng.strategy.TableFilter;
-import org.hibernate.tool.internal.util.NameConverter;
-import org.hibernate.tool.internal.util.TableNameQualifier;
+import org.hibernate.tool.reveng.api.metadata.MetadataConstants;
+import org.hibernate.tool.reveng.api.metadata.MetadataDescriptor;
+import org.hibernate.tool.reveng.api.core.RevengSettings;
+import org.hibernate.tool.reveng.api.core.RevengStrategy;
+import org.hibernate.tool.reveng.api.core.TableIdentifier;
+import org.hibernate.tool.reveng.internal.core.strategy.DefaultStrategy;
+import org.hibernate.tool.reveng.internal.core.strategy.OverrideRepository;
+import org.hibernate.tool.reveng.internal.core.strategy.TableFilter;
+import org.hibernate.tool.reveng.internal.util.NameConverter;
+import org.hibernate.tool.reveng.internal.util.TableNameQualifier;
 
 import h5.concepts.support.DemoDatabase;
 import h5.concepts.support.DemoMetaDataDialect;
@@ -35,7 +35,8 @@ import h5.concepts.support.RevengSupport;
  * Tools 6 moved and renamed these classes: {@code org.hibernate.cfg.reveng.ReverseEngineeringStrategy} ->
  * {@code org.hibernate.tool.api.reveng.RevengStrategy}, {@code DefaultReverseEngineeringStrategy} ->
  * {@code tool.internal.reveng.strategy.DefaultStrategy}, {@code ReverseEngineeringSettings} -> {@code RevengSettings}, ...
- * (row-by-row in README "Changed in this version").
+ * (row-by-row in README "Changed in this version"). In 7.4 Tools became ORM's {@code hibernate-reveng} and these
+ * packages were renamed again: {@code org.hibernate.tool.reveng.api.core.*}, {@code org.hibernate.tool.reveng.internal.core.*}.
  */
 public class RevengStrategyMain {
 
@@ -100,6 +101,11 @@ public class RevengStrategyMain {
         Out.kv("getDetectManyToMany() / OneToOne()", settings.getDetectManyToMany() + " / " + settings.getDetectOneToOne());
         Out.kv("getDetectOptimsticLock() (sic)", settings.getDetectOptimsticLock());
         Out.kv("tableToClassName(EMPLOYEE_DETAIL) now", strategy.tableToClassName(detail));
+        Out.kv("RevengStrategy / DefaultStrategy packages", RevengStrategy.class.getPackageName() + " / "
+            + DefaultStrategy.class.getPackageName());
+        Out.note("CHANGED in 7.4: Hibernate Tools moved into ORM as org.hibernate.orm:hibernate-reveng; "
+            + "org.hibernate.tool.api.reveng -> org.hibernate.tool.reveng.api.core, "
+            + "org.hibernate.tool.internal.reveng.strategy -> org.hibernate.tool.reveng.internal.core.strategy (same API).");
         Out.note("wmstdappdbimpl sets the same settings object on both the default (innermost) strategy and the outer one.");
     }
 
