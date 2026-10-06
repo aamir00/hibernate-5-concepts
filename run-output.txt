@@ -1,6 +1,6 @@
 
 ####################################################################################################
-#  RunAllMain — every Hibernate concept used by wmstdappdbimpl, on Hibernate 6.6.58
+#  RunAllMain — every Hibernate concept used by wmstdappdbimpl, on Hibernate 7.3.13
 ####################################################################################################
 
 ####################################################################################################
@@ -17,7 +17,7 @@
 
 === [Row 3] StandardServiceRegistry — container of services ===
   registry class                                 : org.hibernate.boot.registry.internal.StandardServiceRegistryImpl
-  getService(ConnectionProvider)                 : org.hibernate.engine.jdbc.connections.internal.DriverManagerConnectionProviderImpl
+  getService(ConnectionProvider)                 : org.hibernate.engine.jdbc.connections.internal.DriverManagerConnectionProvider
 WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
   getService(JdbcEnvironment).dialect            : org.hibernate.dialect.HSQLDialect
 
@@ -41,7 +41,7 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
     entity com.demo.hr.EmployeeEntity  <-  table EMPLOYEE
     entity com.demo.hr.ProjectEntity  <-  table PROJECT
     entity com.demo.hr.EmployeeDetailEntity  <-  table EMPLOYEE_DETAIL
-  getDatabase().getDefaultNamespace()            : Name{catalog=null, schema=null}
+  getDatabase().getDefaultNamespace()            : Name[catalog=null, schema=null]
 
 === [Row 6] org.hibernate.boot.internal.MetadataImpl — cast to the internal impl (as wmstdappdbimpl does) ===
   getSessionFactoryBuilder().build()             : org.hibernate.MappingException: entity class not found: com.demo.hr.DepartmentEntity
@@ -91,7 +91,7 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
     DEPT_ID     getSqlType()=null       getSqlTypeCode()=4     getSqlType(md)=integer        len=null   prec=null scale=null nullable=false unique=true  typeName=int idGenerator=assigned params={}
     NAME        getSqlType()=null       getSqlTypeCode()=12    getSqlType(md)=varchar(100)   len=100    prec=null scale=null nullable=false unique=true  typeName=string
     BUDGET      getSqlType()=null       getSqlTypeCode()=2     getSqlType(md)=numeric(12,2)  len=null   prec=12   scale=2    nullable=true  unique=false typeName=big_decimal
-  NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type. CHANGED in 6: getSqlType(Dialect, Mapping) was removed -> getSqlType(Metadata); getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2); SimpleValue.getIdentifierGeneratorProperties() is deprecated -> getIdentifierGeneratorParameters() (a Map).
+  NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type. CHANGED in 6: getSqlType(Dialect, Mapping) was removed -> getSqlType(Metadata); getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2). REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties()/Parameters(); reverse-engineered values implement Tools' EnhancedValue, which still has the strategy and properties.
 
 === [Row 15] PrimaryKey via table.getPrimaryKey().getColumns() ===
   SYS_PK_10091                                   : (DEPT_ID)
@@ -99,7 +99,7 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
 === [Row 16] UniqueKey via table.getUniqueKeys().values() ===
   UK_DEPT_NAME                                   : (NAME)
 
-=== [Row 17] ForeignKey via table.getForeignKeys().values() ===
+=== [Row 17] ForeignKey via table.getForeignKeyCollection() ===
   (none)
 
 === [Row 10] PersistentClass  com.demo.hr.EmployeeEntity ===
@@ -120,7 +120,7 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
     NOTES       getSqlType()=null       getSqlTypeCode()=2005  getSqlType(md)=clob           len=null   prec=null scale=null nullable=true  unique=false typeName=clob
     DEPT_ID     getSqlType()=null       getSqlTypeCode()=4     getSqlType(md)=integer        len=null   prec=null scale=null nullable=true  unique=false typeName=null
     VERSION     getSqlType()=null       getSqlTypeCode()=4     getSqlType(md)=integer        len=null   prec=null scale=null nullable=true  unique=false typeName=java.lang.Integer
-  NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type. CHANGED in 6: getSqlType(Dialect, Mapping) was removed -> getSqlType(Metadata); getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2); SimpleValue.getIdentifierGeneratorProperties() is deprecated -> getIdentifierGeneratorParameters() (a Map).
+  NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type. CHANGED in 6: getSqlType(Dialect, Mapping) was removed -> getSqlType(Metadata); getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2). REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties()/Parameters(); reverse-engineered values implement Tools' EnhancedValue, which still has the strategy and properties.
 
 === [Row 15] PrimaryKey via table.getPrimaryKey().getColumns() ===
   SYS_PK_10094                                   : (EMP_ID)
@@ -128,7 +128,7 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
 === [Row 16] UniqueKey via table.getUniqueKeys().values() ===
   UK_EMP_EMAIL                                   : (EMAIL)
 
-=== [Row 17] ForeignKey via table.getForeignKeys().values() ===
+=== [Row 17] ForeignKey via table.getForeignKeyCollection() ===
   FK_EMP_DEPT                                    : (DEPT_ID) -> DEPARTMENT.DEPT_ID
 
 === [Row 10] PersistentClass  com.demo.hr.ProjectEntity ===
@@ -142,7 +142,7 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
 === [Row 12/13/14] Column / Value / SimpleValue via table.getColumns() ===
     PROJECT_ID  getSqlType()=null       getSqlTypeCode()=4     getSqlType(md)=integer        len=null   prec=null scale=null nullable=false unique=true  typeName=int idGenerator=assigned params={}
     TITLE       getSqlType()=null       getSqlTypeCode()=12    getSqlType(md)=varchar(100)   len=100    prec=null scale=null nullable=false unique=false typeName=string
-  NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type. CHANGED in 6: getSqlType(Dialect, Mapping) was removed -> getSqlType(Metadata); getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2); SimpleValue.getIdentifierGeneratorProperties() is deprecated -> getIdentifierGeneratorParameters() (a Map).
+  NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type. CHANGED in 6: getSqlType(Dialect, Mapping) was removed -> getSqlType(Metadata); getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2). REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties()/Parameters(); reverse-engineered values implement Tools' EnhancedValue, which still has the strategy and properties.
 
 === [Row 15] PrimaryKey via table.getPrimaryKey().getColumns() ===
   SYS_PK_10100                                   : (PROJECT_ID)
@@ -150,7 +150,7 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
 === [Row 16] UniqueKey via table.getUniqueKeys().values() ===
   (none)
 
-=== [Row 17] ForeignKey via table.getForeignKeys().values() ===
+=== [Row 17] ForeignKey via table.getForeignKeyCollection() ===
   (none)
 
 === [Row 10] PersistentClass  com.demo.hr.EmployeeDetailEntity ===
@@ -162,9 +162,9 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
   getQualifiedTableName()                        : PUBLIC.PUBLIC.EMPLOYEE_DETAIL
 
 === [Row 12/13/14] Column / Value / SimpleValue via table.getColumns() ===
-    EMP_ID      getSqlType()=null       getSqlTypeCode()=4     getSqlType(md)=integer        len=null   prec=null scale=null nullable=false unique=true  typeName=null idGenerator=assigned params=null
+    EMP_ID      getSqlType()=null       getSqlTypeCode()=4     getSqlType(md)=integer        len=null   prec=null scale=null nullable=false unique=true  typeName=null (id value OneToOne: no generator getters in 7)
     BIO         getSqlType()=null       getSqlTypeCode()=-1    getSqlType(md)=varchar(1000)  len=1000   prec=null scale=null nullable=true  unique=false typeName=text
-  NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type. CHANGED in 6: getSqlType(Dialect, Mapping) was removed -> getSqlType(Metadata); getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2); SimpleValue.getIdentifierGeneratorProperties() is deprecated -> getIdentifierGeneratorParameters() (a Map).
+  NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type. CHANGED in 6: getSqlType(Dialect, Mapping) was removed -> getSqlType(Metadata); getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2). REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties()/Parameters(); reverse-engineered values implement Tools' EnhancedValue, which still has the strategy and properties.
 
 === [Row 15] PrimaryKey via table.getPrimaryKey().getColumns() ===
   SYS_PK_10098                                   : (EMP_ID)
@@ -172,9 +172,9 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
 === [Row 16] UniqueKey via table.getUniqueKeys().values() ===
   (none)
 
-=== [Row 17] ForeignKey via table.getForeignKeys().values() ===
+=== [Row 17] ForeignKey via table.getForeignKeyCollection() ===
   FK_DETAIL_EMP                                  : (EMP_ID) -> EMPLOYEE.EMP_ID
-  NOTE: CHANGED in 6: Table.getColumnIterator() and Constraint.getColumnIterator() were removed -> getColumns(); getUniqueKeyIterator()/getForeignKeyIterator() are deprecated for removal -> getUniqueKeys()/getForeignKeys().values().
+  NOTE: CHANGED in 6: Table.getColumnIterator() and Constraint.getColumnIterator() were removed -> getColumns(); getUniqueKeyIterator()/getForeignKeyIterator() -> getUniqueKeys().values() / getForeignKeys().values(). CHANGED in 7: the two iterators are removed and getForeignKeys() is deprecated for removal -> getForeignKeyCollection().
 
 === [Row 18] org.hibernate.type.StandardBasicTypes — type names used in hibernate.reveng.xml ===
   STRING.getName()                               : string
@@ -186,7 +186,7 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
   The reveng.xml used by RevengSupport maps VARCHAR(1000) -> "text", so EMPLOYEE_DETAIL.BIO above shows typeName=text instead of string (no override touches EMPLOYEE.NOTES, so the CLOB stays clob).
 
 ####################################################################################################
-#  EntityHqlMain — @Entity + HQL: FetchType LAZY/EAGER, @Cascade PERSIST/MERGE/REMOVE
+#  EntityHqlMain — @Entity + HQL: FetchType LAZY/EAGER, cascade PERSIST/MERGE/REMOVE
 ####################################################################################################
 
 === [Row 1/29] Configuration.addAnnotatedClass(..) -> SessionFactory with entities ===
@@ -198,16 +198,19 @@ Hibernate: create table Employee (department_id integer, id integer generated by
 Hibernate: alter table Employee add constraint FK14tijxqry9ml17nk86sqfp561 foreign key (department_id) references Department
   mapped entities                                : 2
 
-=== [Row 20] @Cascade(PERSIST) — session.persist(dept) cascades to new employees ===
+=== [Row 20] cascade PERSIST — session.persist(dept) cascades to new employees ===
 Hibernate: insert into Department (name,id) values (?,default)
 Hibernate: insert into Employee (department_id,name,salary,id) values (?,?,?,default)
 Hibernate: insert into Employee (department_id,name,salary,id) values (?,?,?,default)
 Hibernate: insert into Employee (department_id,name,salary,id) values (?,?,?,default)
 Hibernate: select count(e1_0.id) from Employee e1_0
   employees saved through the cascade            : 3
-  NOTE: CHANGED in 6: session.saveOrUpdate() and CascadeType.SAVE_UPDATE are deprecated -> persist() (new) / merge() (detached) with the PERSIST + MERGE cascades.
+  NOTE: CHANGED in 6: session.saveOrUpdate() and CascadeType.SAVE_UPDATE are deprecated -> persist() (new) / merge() (detached) with the PERSIST + MERGE cascades. REMOVED in 7: saveOrUpdate()/save()/update()/delete() and SAVE_UPDATE.
+  org.hibernate.annotations.CascadeType deprecated : forRemoval=true, since=7
+  its constants                                  : [ALL, PERSIST, MERGE, REMOVE, REFRESH, DETACH, LOCK, REPLICATE, DELETE_ORPHAN]
+  NOTE: CHANGED in 7: @Cascade / Hibernate's CascadeType are deprecated for removal (SAVE_UPDATE and DELETE are gone) -> JPA @OneToMany(cascade = {PERSIST, MERGE, REMOVE}), as in entities/Department.
 
-=== [Row 20] @Cascade(MERGE) — session.merge(detached dept) cascades to a new employee ===
+=== [Row 20] cascade MERGE — session.merge(detached dept) cascades to a new employee ===
 Hibernate: insert into Department (name,id) values (?,default)
 Hibernate: select count(e1_0.id) from Employee e1_0
 Hibernate: select d1_0.id,d1_0.name,e1_0.department_id,e1_0.id,e1_0.name,e1_0.salary from Department d1_0 left join Employee e1_0 on d1_0.id=e1_0.department_id where d1_0.id=?
@@ -233,9 +236,9 @@ Hibernate: select d1_0.id,d1_0.name from Department d1_0 where d1_0.id=?
   SQL statements                                 : 2
   NOTE: HQL loads the EAGER to-one right away with a second SELECT.
 Hibernate: select e1_0.id,d1_0.id,d1_0.name,e1_0.name,e1_0.salary from Employee e1_0 left join Department d1_0 on d1_0.id=e1_0.department_id where e1_0.id=?
-  session.get(Employee, 1): isInitialized(department) : true
+  session.find(Employee, 1): isInitialized(department) : true
   SQL statements                                 : 1
-  NOTE: session.get() loads the EAGER to-one in the same SELECT via an outer join.
+  NOTE: find() loads the EAGER to-one in the same SELECT via an outer join. CHANGED in 7: Session.get(Class, id) is deprecated for removal -> find(Class, id) (JPA).
 
 === [Row 33] Typed HQL — session.createQuery(hql, Employee.class).list() ===
 Hibernate: select e1_0.id,e1_0.department_id,e1_0.name,e1_0.salary from Employee e1_0 where e1_0.salary>? order by e1_0.salary desc
@@ -259,7 +262,7 @@ Hibernate: update Employee e1_0 set salary=(e1_0.salary+100)
   executeUpdate() rows                           : 4
   NOTE: CHANGED in 6: untyped createQuery(String) is deprecated -> createMutationQuery(String) for update/delete.
 
-=== [Row 20] @Cascade(REMOVE) — session.remove(dept) also deletes its employees ===
+=== [Row 20] cascade REMOVE — session.remove(dept) also deletes its employees ===
 Hibernate: select count(e1_0.id) from Employee e1_0
 Hibernate: select d1_0.id,d1_0.name from Department d1_0 where d1_0.id=?
 Hibernate: select e1_0.department_id,e1_0.id,e1_0.name,e1_0.salary from Employee e1_0 where e1_0.department_id=?
@@ -286,13 +289,13 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
   NOTE: CHANGED in 6: supportsSequences()/getSequenceNextValString() moved to dialect.getSequenceSupport(); getTypeName(int, long, int, int) was removed -> TypeConfiguration.getDdlTypeRegistry().getTypeName(int, Size, Type), which is filled during bootstrap (see ddlTypeName below).
 
 === [Row 22–28] Concrete dialects: openQuote()/closeQuote(), superclass, @Deprecated ===
-    DB2Dialect                     quotes=""  extends Dialect                            deprecated=false identity=true  version=10.5
-    HANADialect                    quotes=""  extends AbstractHANADialect                deprecated=false identity=true  version=4.0
+    DB2Dialect                     quotes=""  extends Dialect                            deprecated=false identity=true  version=11.1
+    HANADialect                    quotes=""  extends Dialect                            deprecated=false identity=true  version=2.0.50
     HSQLDialect                    quotes=""  extends Dialect                            deprecated=false identity=true  version=2.6.1
     MySQLDialect                   quotes=``  extends Dialect                            deprecated=false identity=true  version=8.0
     OracleDialect                  quotes=""  extends Dialect                            deprecated=false identity=true  version=19.0
-    PostgreSQLDialect              quotes=""  extends Dialect                            deprecated=false identity=true  version=12.0
-    SQLServerDialect               quotes=[]  extends AbstractTransactSQLDialect         deprecated=false identity=true  version=11.0
+    PostgreSQLDialect              quotes=""  extends Dialect                            deprecated=false identity=true  version=13.0
+    SQLServerDialect               quotes=[]  extends AbstractTransactSQLDialect         deprecated=false identity=true  version=12.0
   Quoted identifier, the way QueryCodegenEntityBuilder builds it:
   DB2Dialect                                     : "Employee"
   HANADialect                                    : "Employee"
@@ -301,7 +304,7 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
   OracleDialect                                  : "Employee"
   PostgreSQLDialect                              : "Employee"
   SQLServerDialect                               : [Employee]
-  NOTE: CHANGED in 6: one version-aware dialect per DB replaces 5.x's versioned classes (Oracle12cDialect, PostgreSQL10Dialect, ...); OracleDialect / PostgreSQLDialect are no longer deprecated and now extend Dialect. HANACloudColumnStoreDialect is deprecated for removal -> HANADialect(DatabaseVersion.make(4)); SQLServer2012Dialect is deprecated -> SQLServerDialect(DatabaseVersion.make(11)).
+  NOTE: CHANGED in 6: one version-aware dialect per DB replaces 5.x's versioned classes (Oracle12cDialect, PostgreSQL10Dialect, ...); OracleDialect / PostgreSQLDialect are no longer deprecated and now extend Dialect. REMOVED in 7: HANACloudColumnStoreDialect -> HANADialect and SQLServer2012Dialect -> SQLServerDialect (deprecated in 6; not in hibernate-community-dialects either). In 7 their no-arg constructors assume a newer minimum version (HANA 2.0.50, SQL Server 12) than the 6.x replacements HANADialect(4) / SQLServerDialect(11) used.
 
 ####################################################################################################
 #  NativeSqlSessionMain — SessionFactory, Session, Transaction, Query, ScrollableResults, JDBC access, exceptions
@@ -334,17 +337,19 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
   NOTE: CHANGED in 6: the untyped createNativeQuery(String) is deprecated -> createNativeQuery(sql, Class); a native COUNT(*) now comes back as Long (5.x: BigInteger).
 
 === [Row 34] ScrollableResults — query.scroll() (cursor; rows are not all loaded into memory) ===
-  scroll class                                   : org.hibernate.internal.ScrollableResultsImpl
-    row 0: 100 Ada 2020-01-15
-    row 1: 101 Alan 2019-06-01
-    row 2: 102 Grace 2021-03-10
-    row 3: 103 Linus 2022-08-20
-    row 4: 104 Margaret 2018-11-05
+  scroll class                                   : org.hibernate.internal.scrollable.ScrollableResultsImpl
+    position 1: 100 Ada 2020-01-15  (HIRED_ON as java.time.LocalDate)
+    position 2: 101 Alan 2019-06-01  (HIRED_ON as java.time.LocalDate)
+    position 3: 102 Grace 2021-03-10  (HIRED_ON as java.time.LocalDate)
+    position 4: 103 Linus 2022-08-20  (HIRED_ON as java.time.LocalDate)
+    position 5: 104 Margaret 2018-11-05  (HIRED_ON as java.time.LocalDate)
+  NOTE: CHANGED in 7: getRowNumber() (0-based) is deprecated for removal -> getPosition() (1-based); ScrollableResults is AutoCloseable but no longer Closeable. Native date/time columns now come back as java.time types (5.x/6.x: java.sql.Date etc.; hibernate.query.native.prefer_jdbc_datetime_types=true restores those).
 
 === [Row 35] AbstractScrollableResults.getResultSet() — REMOVED in 6 ===
   scroll instanceof AbstractScrollableResults    : true
   AbstractScrollableResults declares getResultSet() : false
   NOTE: REMOVED in 6: the protected getResultSet() is gone, so the reflective call wmstdappdbimpl (QueryProcedureTester) uses to read the result columns' metadata no longer works. Also, query.scroll() without a ScrollMode now throws AssertionFailure while JDBC metadata access is off (FORWARD_ONLY works).
+  AbstractScrollableResults package (moved in 7) : org.hibernate.internal.scrollable
   Supported replacement — run the SQL on the Session's connection and read ResultSetMetaData:
   column 1 EMP_ID                                : INTEGER (java java.lang.Integer)
   column 2 FIRST_NAME                            : VARCHAR (java java.lang.String)
@@ -373,13 +378,13 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
 
 === [Row 36/37] Query.list() on a missing table -> SQLGrammarException (a HibernateException and a PersistenceException) ===
   (the WARN/ERROR SqlExceptionHelper lines are Hibernate logging the failure — expected)
-WARN SqlExceptionHelper - SQL Error: -5501, SQLState: 42501
-ERROR SqlExceptionHelper - user lacks privilege or object not found: NO_SUCH_TABLE in statement [SELECT * FROM NO_SUCH_TABLE]
+WARN error - HHH000247: ErrorCode: -5501, SQLState: 42501
+WARN error - user lacks privilege or object not found: NO_SUCH_TABLE in statement [SELECT * FROM NO_SUCH_TABLE]
   caught (catch PersistenceException)            : org.hibernate.exception.SQLGrammarException
   e instanceof HibernateException                : true
   e.getCause() instanceof HibernateException     : false
   cause chain:
-    org.hibernate.exception.SQLGrammarException: could not prepare statement [user lacks privilege or object not found: NO_SUCH_TABLE in statement [SELECT * FROM NO_SUCH_TABLE]] [SELECT * FROM NO_SUCH_TABLE]
+    org.hibernate.exception.SQLGrammarException: Could not prepare statement [user lacks privilege or object not found: NO_SUCH_TABLE in statement [SELECT * FROM NO_SUCH_TABLE]] [SELECT * FROM NO_SUCH_TABLE]
     java.sql.SQLSyntaxErrorException: user lacks privilege or object not found: NO_SUCH_TABLE in statement [SELECT * FROM NO_SUCH_TABLE]
     org.hsqldb.HsqlException: user lacks privilege or object not found: NO_SUCH_TABLE
   class hierarchy of SQLGrammarException:
@@ -390,12 +395,12 @@ ERROR SqlExceptionHelper - user lacks privilege or object not found: NO_SUCH_TAB
   NOTE: CHANGED in 6: the SQLGrammarException is thrown directly. 5.x wrapped it in a plain PersistenceException, so 'catch (HibernateException)' did not catch it there; now it does, and code that unwrapped getCause() sees the JDBC SQLException instead.
 
 === [Row 37] session.doWork(..) failing -> HibernateException (JDBCException) thrown directly ===
-WARN SqlExceptionHelper - SQL Error: -5501, SQLState: 42501
-ERROR SqlExceptionHelper - user lacks privilege or object not found: NO_SUCH_TABLE
+WARN error - HHH000247: ErrorCode: -5501, SQLState: 42501
+WARN error - user lacks privilege or object not found: NO_SUCH_TABLE
   caught (catch HibernateException)              : org.hibernate.exception.SQLGrammarException
   e instanceof PersistenceException              : true
   cause chain:
-    org.hibernate.exception.SQLGrammarException: error executing work [user lacks privilege or object not found: NO_SUCH_TABLE] [n/a]
+    org.hibernate.exception.SQLGrammarException: Error executing work [user lacks privilege or object not found: NO_SUCH_TABLE] [n/a]
     java.sql.SQLSyntaxErrorException: user lacks privilege or object not found: NO_SUCH_TABLE
     org.hsqldb.HsqlException: user lacks privilege or object not found: NO_SUCH_TABLE
   class hierarchy of SQLGrammarException:
@@ -487,29 +492,29 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
 WARNING: Binding column twice should not happen. Column(EMP_ID)
   com.demo.hr.DepartmentEntity   (table DEPARTMENT)
       id: deptId
-      name : BasicValue -> string
-      budget : BasicValue -> big_decimal
+      name : EnhancedBasicValue -> string
+      budget : EnhancedBasicValue -> big_decimal
       employeeEntities : Set -> java.util.Set(com.demo.hr.DepartmentEntity.employeeEntities)
   com.demo.hr.EmployeeEntity   (table EMPLOYEE, optimistic-lock version property 'rowVersion')
       id: empId
-      rowVersion : BasicValue -> integer
+      rowVersion : EnhancedBasicValue -> integer
       departmentEntity : ManyToOne -> com.demo.hr.DepartmentEntity
-      firstName : BasicValue -> string
-      lastName : BasicValue -> string
-      email : BasicValue -> string
-      salary : BasicValue -> big_decimal
-      hiredOn : BasicValue -> date
-      notes : BasicValue -> clob
+      firstName : EnhancedBasicValue -> string
+      lastName : EnhancedBasicValue -> string
+      email : EnhancedBasicValue -> string
+      salary : EnhancedBasicValue -> big_decimal
+      hiredOn : EnhancedBasicValue -> date
+      notes : EnhancedBasicValue -> clob
       employeeDetailEntity : OneToOne -> com.demo.hr.EmployeeDetailEntity
       projectEntities : Set -> java.util.Set(com.demo.hr.EmployeeEntity.projectEntities)
   com.demo.hr.ProjectEntity   (table PROJECT)
       id: projectId
-      title : BasicValue -> string
+      title : EnhancedBasicValue -> string
       employeeEntities : Set -> java.util.Set(com.demo.hr.ProjectEntity.employeeEntities)
   com.demo.hr.EmployeeDetailEntity   (table EMPLOYEE_DETAIL)
       id: empId
       employeeEntity : OneToOne -> com.demo.hr.EmployeeEntity
-      bio : BasicValue -> text
+      bio : EnhancedBasicValue -> text
   NOTE: AUDIT_LOG (TableFilter) and the HIGH_EARNERS view (DemoMetaDataDialect only lists TABLEs) are absent; EMPLOYEE_PROJECT became a many-to-many Set, EMPLOYEE_DETAIL a OneToOne, VERSION a <version>.
 
 === [Row 41] strategy.isOneToOne(ForeignKey) on the reverse-engineered foreign keys ===
@@ -589,10 +594,11 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
 
 === [Row 38] SQLExceptionConverter.convert(SQLException, message, sql) — SQLState decides the type ===
   converter class                                : org.hibernate.exception.internal.StandardSQLExceptionConverter
-  SQLState 42501 (object not found)              : SQLGrammarException
+  SQLState 42501 (object not found)              : AuthException
   SQLState 23505 (unique constraint violated)    : ConstraintViolationException
   SQLState 08001 (cannot connect)                : JDBCConnectionException
   SQLState 40001 (serialization failure)         : LockAcquisitionException
+  NOTE: CHANGED in 7: SQLState 42501 (SQL standard: insufficient privilege) maps to the new AuthException (6.x: SQLGrammarException). HSQLDB reports a missing table as 42501, but queries through a Session still get SQLGrammarException because HSQLDialect's own conversion (by error code) runs first.
 
 ####################################################################################################
 #  ExporterMain — AbstractExporter, GenericExporter.resolveFilename(POJOClass), POJOClass
@@ -666,11 +672,11 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
     |   lastName : java.lang.String
     |   email : java.lang.String
     |   salary : java.math.BigDecimal
-    |   hiredOn : java.sql.Date
+    |   hiredOn : java.util.Date
     |   notes : java.sql.Clob
     |   employeeDetailEntity : com.demo.hr.EmployeeDetailEntity
     |   projectEntities : java.util.Set<com.demo.hr.ProjectEntity>
-  NOTE: CHANGED in 6: POJOClass.getQualifiedDeclarationName() repeats the package (com.demo.hr.com.demo.hr.X). Tools 5.6 had an inverted check that returned the already-qualified class name; Tools 6 fixed the check and now prefixes the package to that qualified name. getPackageName() + "." + getShortName() is the safe form. A DATE column now maps to java.sql.Date in generated code (5.x: java.util.Date).
+  NOTE: CHANGED in 6: POJOClass.getQualifiedDeclarationName() repeats the package (com.demo.hr.com.demo.hr.X). Tools 5.6 had an inverted check that returned the already-qualified class name; Tools 6 fixed the check and now prefixes the package to that qualified name. getPackageName() + "." + getShortName() is the safe form. A DATE column maps to java.util.Date in generated code, as in 5.x (Tools 6.6 generated java.sql.Date).
 
 === [Row 58] org.hibernate.tool.hbm2x.ant.ConfigurationTask ===
   Only a stale Javadoc @see in wmstdappdbimpl's ConfigurationBuilder; the class is not in Tools 5.6.15 (nor 6.6). Nothing to run.

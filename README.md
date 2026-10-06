@@ -1,9 +1,11 @@
 # hibernate-5-concepts
 
 Runnable examples of **every Hibernate class/concept used by `wmstdappdbimpl`**, ported to
-`org.hibernate.orm:hibernate-core` **6.6.58.Final** and `org.hibernate.tool:hibernate-tools-orm` **6.6.58.Final**
-(branch `hibernate-6`; `main` has the original 5.6.15 version). The plan and research behind the port are in
-[`plans/5to6.md`](plans/5to6.md); what changed per row is in [Changed in this version](#changed-in-this-version-5615--6658).
+`org.hibernate.orm:hibernate-core` **7.3.13.Final** and `org.hibernate.tool:hibernate-tools-orm` **7.3.13.Final**
+(branch `hibernate-6-to-7`, built on top of `hibernate-6`; `main` has the original 5.6.15 version). The plans and
+research behind the port are in [`plans/5to6.md`](plans/5to6.md) and [`plans/6to7.md`](plans/6to7.md); what changed
+per row is in [Changed in this version](#changed-in-this-version-6658--7313) and
+[Changed 5.6.15 → 6.6.58](#changed-5615--6658-branch-hibernate-6).
 The row numbers below (and in every `=== [Row N] ... ===` header the Mains print) are the rows of
 [`../hibernate-classes-and-concepts.md`](../hibernate-classes-and-concepts.md).
 
@@ -12,7 +14,7 @@ wmstdappdbimpl class that uses the same API.
 
 ## Run
 
-Requirements: JDK 21. Nothing else: the database is in-memory HSQLDB, and dependencies come from
+Requirements: JDK 21 (Hibernate 7 needs 17+). Nothing else: the database is in-memory HSQLDB, and dependencies come from
 `~/.m2` / Maven Central.
 
 ```bash
@@ -28,9 +30,9 @@ Or open the folder in IntelliJ (Gradle import) and click the run arrow next to a
 | Main | Rows | What it shows |
 |---|---|---|
 | `BootstrapMain` | 1–7 | `Configuration` + `StandardServiceRegistryBuilder` → `SessionFactory`; reveng `Metadata` → `MetadataImpl.getBootstrapContext()` → `StandardServiceRegistryImpl.destroy()` |
-| `MappingModelMain` | 8–18 | `Identifier`, `QualifiedNameImpl`; walks every reverse-engineered `PersistentClass` → `Table` → columns (`Column`/`Value`/`SimpleValue` incl. id-generator strategy + parameters), `PrimaryKey`/`UniqueKey`/`ForeignKey` via the 6.x collection getters; `StandardBasicTypes` names |
-| `EntityHqlMain` | 19–20 (+29–34) | Two `@Entity`s + HQL: `FetchType.LAZY` vs `EAGER` (SQL printed, statement counts), Hibernate `@Cascade(PERSIST, MERGE, REMOVE)` in action (`persist`, detached `merge`, `remove`), typed HQL, projection, paging, `join fetch`, bulk update via `createMutationQuery` |
-| `DialectsMain` | 21–28 | `Dialect` basics (`getSequenceSupport()`, DDL type names from the `DdlTypeRegistry`), and the 7 dialects wmstdappdbimpl names (HANA / SQL Server via their 6.x replacements): `openQuote()/closeQuote()`, superclass, `@Deprecated`, assumed DB version |
+| `MappingModelMain` | 8–18 | `Identifier`, `QualifiedNameImpl`; walks every reverse-engineered `PersistentClass` → `Table` → columns (`Column`/`Value`/`SimpleValue` incl. id-generator strategy + parameters), `PrimaryKey`/`UniqueKey`/`ForeignKey` via the collection getters (`getForeignKeyCollection()` in 7); `StandardBasicTypes` names |
+| `EntityHqlMain` | 19–20 (+29–34) | Two `@Entity`s + HQL: `FetchType.LAZY` vs `EAGER` (SQL printed, statement counts), JPA `cascade = {PERSIST, MERGE, REMOVE}` in action (`persist`, detached `merge`, `remove`; Hibernate's `@Cascade` is deprecated for removal in 7), `find`, typed HQL, projection, paging, `join fetch`, bulk update via `createMutationQuery` |
+| `DialectsMain` | 21–28 | `Dialect` basics (`getSequenceSupport()`, DDL type names from the `DdlTypeRegistry`), and the 7 dialects wmstdappdbimpl names (HANA / SQL Server via their replacements, the old classes are removed in 7): `openQuote()/closeQuote()`, superclass, `@Deprecated`, assumed DB version |
 | `NativeSqlSessionMain` | 29–37 | Entity-less `SessionFactory` (like `DBConnectionUtils`); `Session`, `Transaction` commit/rollback, typed native `Query` (params, paging, `list`, `uniqueResult`, `createNativeMutationQuery`, `scroll`), `AbstractScrollableResults.getResultSet()` gone → `doWork` + `ResultSetMetaData`, `SessionImpl.connection()` gone → `getJdbcCoordinator()` vs `doWork`, exception hierarchy |
 | `RevengStrategyMain` | 39–47, 53–54 | `TableIdentifier.create`, `TableNameQualifier`, `NameConverter`, `DefaultStrategy`/`DelegatingStrategy`, `RevengSettings`, `TableFilter`, `OverrideRepository` + `hibernate.reveng.xml`, `MetadataDescriptorFactory.createReverseEngineeringDescriptor(..).createMetadata()` |
 | `MetaDataDialectMain` | 38, 48–52 | `RevengDialectFactory` selection, `JDBCMetaDataDialect` calls (tables, columns, PKs, indexes, exported keys), a custom `AbstractMetaDataDialect` subclass, `MySQLMetaDataDialect`, `ResultSetIterator`, `SQLExceptionConverter` |
@@ -51,16 +53,16 @@ Or open the folder in IntelliJ (Gradle import) and click the run arrow next to a
 | 8 | `naming.Identifier` | `MappingModelMain.relationalNaming` |
 | 9 | `QualifiedNameImpl` | `MappingModelMain.relationalNaming` |
 | 10 | `mapping.PersistentClass` | `MappingModelMain.mappingModel`, `RevengStrategyMain.descriptorAndMetadata` |
-| 11 | `mapping.Table` | `MappingModelMain.mappingModel` (`getColumns/getUniqueKeys/getForeignKeys/getPrimaryKey`) |
+| 11 | `mapping.Table` | `MappingModelMain.mappingModel` (`getColumns/getUniqueKeys/getForeignKeyCollection/getPrimaryKey`) |
 | 12 | `mapping.Column` | `MappingModelMain.mappingModel` (`getSqlType()`, `getSqlTypeCode()`, `getSqlType(Metadata)`, length/precision/scale) |
 | 13 | `mapping.Value` | `MappingModelMain.mappingModel` (`isSimpleValue()`) |
-| 14 | `mapping.SimpleValue` | `MappingModelMain.mappingModel` (`getIdentifierGeneratorStrategy/Parameters`) |
+| 14 | `mapping.SimpleValue` | `MappingModelMain.mappingModel` (generator getters removed in 7 → Tools' `EnhancedValue.getIdentifierGeneratorStrategy/Properties`) |
 | 15 | `mapping.PrimaryKey` | `MappingModelMain.mappingModel` |
 | 16 | `mapping.UniqueKey` | `MappingModelMain.mappingModel` |
 | 17 | `mapping.ForeignKey` | `MappingModelMain.mappingModel` (typed `getReferencedColumns()`), `RevengStrategyMain` (`isOneToOne`) |
 | 18 | `type.StandardBasicTypes` | `MappingModelMain.basicTypes`, `RevengSupport.revengXml` |
 | 19 | `jakarta.persistence.FetchType` | `EntityHqlMain.fetchTypes`, `entities/*` |
-| 20 | `annotations.CascadeType` | `EntityHqlMain.cascadePersist/cascadeMerge/cascadeRemove`, `entities/Department` |
+| 20 | `annotations.CascadeType` | `EntityHqlMain.cascadePersist/cascadeMerge/cascadeRemove/hibernateCascadeTypeStatus`, `entities/Department` (JPA `cascade`; the Hibernate enum is deprecated for removal in 7) |
 | 21 | `dialect.Dialect` | `DialectsMain` |
 | 22–28 | `DB2Dialect`, `HANACloudColumnStoreDialect` (→ `HANADialect`), `HSQLDialect`, `MySQLDialect`, `OracleDialect`, `PostgreSQLDialect`, `SQLServer2012Dialect` (→ `SQLServerDialect`) | `DialectsMain` |
 | 29 | `SessionFactory` | `NativeSqlSessionMain.createSessionFactory`, `EntityHqlMain` |
@@ -69,7 +71,7 @@ Or open the folder in IntelliJ (Gradle import) and click the run arrow next to a
 | 32 | `Transaction` | `NativeSqlSessionMain.transactions`, `EntityHqlMain` |
 | 33 | `query.Query` | `NativeSqlSessionMain.queryApi/scrollableResults`, `EntityHqlMain.hql` |
 | 34 | `ScrollableResults` | `NativeSqlSessionMain.scrollableResults` |
-| 35 | `internal.AbstractScrollableResults` | `NativeSqlSessionMain.scrollableResults` (`getResultSet()` is gone in 6; replacement: `doWork` + `ResultSetMetaData`) |
+| 35 | `internal.AbstractScrollableResults` (`internal.scrollable` in 7) | `NativeSqlSessionMain.scrollableResults` (`getResultSet()` is gone since 6; replacement: `doWork` + `ResultSetMetaData`) |
 | 36 | `jakarta.persistence.PersistenceException` | `NativeSqlSessionMain.exceptions` |
 | 37 | `HibernateException` | `NativeSqlSessionMain.exceptions` |
 | 38 | `exception.spi.SQLExceptionConverter` | `MetaDataDialectMain.resultSetIteratorAndConverter/mySqlDialect`, `support/DemoMetaDataDialect` |
@@ -92,13 +94,29 @@ Or open the folder in IntelliJ (Gradle import) and click the run arrow next to a
 | 55 | `hbm2x.AbstractExporter` | `ExporterMain` |
 | 56 | `hbm2x.GenericExporter` | `ExporterMain.SummaryExporter` |
 | 57 | `hbm2x.pojo.POJOClass` | `ExporterMain.SummaryExporter.resolveFilename(POJOClass)`, `templates/entity-summary.ftl` |
-| 58 | `hbm2x.ant.ConfigurationTask` | `ExporterMain` (note only — not in Tools 5.6.15 or 6.6) |
+| 58 | `hbm2x.ant.ConfigurationTask` | `ExporterMain` (note only — not in Tools 5.6.15, 6.6 or 7.3) |
 
-## Changed in this version (5.6.15 → 6.6.58)
+## Changed in this version (6.6.58 → 7.3.13)
 
-Every row still runs; this is what had to change. `run-output.txt` holds the full output of `./gradlew run` on this
-branch (timings and the project path normalised), so `git diff main..hibernate-6 -- run-output.txt` shows the
-behaviour changes, and `git diff main..hibernate-6 -- src` the code changes.
+Every row still runs. `run-output.txt` holds the full output of `./gradlew run` on this branch (timings and the
+project path normalised): `git diff hibernate-6..hibernate-6-to-7` shows the 6 → 7 code and behaviour changes,
+`git diff main..hibernate-6-to-7` the whole 5 → 7 path. Tools 7.3.13 has the same API as Tools 6.6.58, so all
+changes are in core ORM.
+
+| # | 6.6.58 | 7.3.13 |
+|---|---|---|
+| build | core + tools-orm 6.6.58, Java 11+, JPA 3.1 | core + tools-orm 7.3.13, **Java 17+**, **JPA 3.2** |
+| 14 | `SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorParameters()` | **removed**; reverse-engineered ids are Tools' `EnhancedBasicValue` → `EnhancedValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties()`; a shared-PK one-to-one id (`OneToOne` value) has no generator getters |
+| 11/17 | `Table.getForeignKeys().values()` (iterators deprecated) | `getForeignKeyCollection()` (`getForeignKeys()` deprecated for removal; `getUniqueKeyIterator()/getForeignKeyIterator()` removed) |
+| 20 | `@org.hibernate.annotations.Cascade({PERSIST, MERGE, REMOVE})` | JPA `@OneToMany(cascade = {PERSIST, MERGE, REMOVE})` — `@Cascade` and Hibernate's `CascadeType` are deprecated for removal; `SAVE_UPDATE`/`DELETE` removed |
+| 20/30 | `session.get(Class, id)` | `session.find(Class, id)` (`get` deprecated for removal); `save/saveOrUpdate/update/delete/load` removed |
+| 23/28 | `HANADialect(DatabaseVersion.make(4))`, `SQLServerDialect(DatabaseVersion.make(11))` (old classes deprecated) | no-arg `HANADialect()` / `SQLServerDialect()`; `HANACloudColumnStoreDialect` and `SQLServer2012Dialect` removed (not in community dialects either) |
+| 34 | `ScrollableResults.getRowNumber()` (0-based), `Closeable` | `getPosition()` (1-based; `getRowNumber()` deprecated for removal), only `AutoCloseable` |
+| 35 | `org.hibernate.internal.AbstractScrollableResults` | `org.hibernate.internal.scrollable.AbstractScrollableResults` |
+| 33/34 | native `DATE` → `java.sql.Date` | → `java.time.LocalDate` (`hibernate.query.native.prefer_jdbc_datetime_types=true` restores `java.sql.*`) |
+| 38 | SQLState 42501 → `SQLGrammarException` | → new `AuthException` (standard converter) |
+
+## Changed 5.6.15 → 6.6.58 (branch `hibernate-6`)
 
 | # | 5.6.15 | 6.6.58 |
 |---|---|---|
@@ -144,9 +162,23 @@ In-memory HSQLDB `jdbc:hsqldb:mem:hr_demo`, schema `PUBLIC`, created once per JV
 
 `EntityHqlMain` uses its own database (`jdbc:hsqldb:mem:entity_demo`), created by `hbm2ddl` from the two entities.
 
-## Things the runs show (6.6.58 behaviour, compared with 5.6.15)
+## Things the runs show (7.3.13 behaviour, compared with 5.6.15)
 
-- **Exceptions:** native `Query.list()` on bad SQL now throws the `SQLGrammarException` **directly** (5.x wrapped
+7.3-specific (vs 6.6):
+- **Dialects:** no-arg dialects assume newer minimum versions (DB2 11.1, PostgreSQL 13, SQL Server 12, HANA 2.0.50);
+  `HANADialect` now extends `Dialect` directly.
+- **Exceptions:** messages start with a capital letter ("Could not prepare statement"); JDBC errors are logged as
+  `HHH000247` warnings; the standard converter maps SQLState 42501 to `AuthException`.
+- **Small API shapes:** `getDefaultNamespace()` prints as a record (`Name[...]`), the default connection provider is
+  `DriverManagerConnectionProvider`, scrollable results live in `org.hibernate.internal.scrollable`, and
+  reverse-engineered values are Tools' `EnhancedBasicValue`.
+- **Native date/time values:** a `DATE` column comes back as `java.time.LocalDate` (5.x/6.x: `java.sql.Date`).
+- **Generated code:** a `DATE` property is `java.util.Date` again (Tools 6.6: `java.sql.Date`).
+- No change in SQL, statement counts, cascades or query results compared with 6.6.
+
+Since 5.6 (unchanged from 6.6):
+
+- **Exceptions:** native `Query.list()` on bad SQL throws the `SQLGrammarException` **directly** (5.x wrapped
   it in a plain `jakarta.persistence.PersistenceException`). `catch (PersistenceException)` still catches it,
   `catch (HibernateException)` now does too, and `getCause()` is the JDBC `SQLException`.
 - **Native result types:** `COUNT(*)` is a `Long` (5.x: `BigInteger`); other HSQLDB types are unchanged.
@@ -155,9 +187,9 @@ In-memory HSQLDB `jdbc:hsqldb:mem:hr_demo`, schema `PUBLIC`, created once per JV
   (5.x: 255/19/2). `EMPLOYEE_DETAIL.BIO` (mapped to `text` by `hibernate.reveng.xml`) now resolves to
   `varchar(1000)` (5.x: `longvarchar`), and a `CLOB` to `clob` (5.x: `clob(255)`). Reverse-engineered basic values
   are `BasicValue`s (5.x: `SimpleValue`).
-- **Cascades:** `@Cascade(PERSIST)` cascades at `persist()` time; `MERGE` cascades a detached parent's new
-  children on `merge()`. 5.x's `SAVE_UPDATE` (deprecated in 6, removed in 7) also cascaded for `persist()` at flush.
-- **`FetchType.EAGER` to-one:** unchanged — HQL loads it with a second `SELECT`, `session.get()` with a join.
+- **Cascades:** `PERSIST` cascades at `persist()` time; `MERGE` cascades a detached parent's new children on
+  `merge()`. 5.x's `SAVE_UPDATE` (deprecated in 6, removed in 7) also cascaded for `persist()` at flush.
+- **`FetchType.EAGER` to-one:** unchanged — HQL loads it with a second `SELECT`, `session.find()` with a join.
   SQL aliases are now short (`e1_0`), and paging renders `fetch first ? rows only`.
 - **Scrolling:** `query.scroll()` without a `ScrollMode` throws `AssertionFailure` when JDBC metadata access is
   off, because scrollable result-set support is no longer detected; `FORWARD_ONLY` works.
@@ -166,13 +198,13 @@ In-memory HSQLDB `jdbc:hsqldb:mem:hr_demo`, schema `PUBLIC`, created once per JV
   metadata access is off.
 - **Tools needs explicit cleanup:** `createMetadata()` still builds its own service registry that nobody
   closes. Destroy it through `MetadataImpl.getBootstrapContext()` (as wmstdappdbimpl does).
-- **`hibernate.reveng.xml`:** Tools 6.6 still does not bundle the reverse-engineering DTD, so a DOCTYPE line
+- **`hibernate.reveng.xml`:** Tools 6.6/7.3 still do not bundle the reverse-engineering DTD, so a DOCTYPE line
   makes the JDK parser try to download it. `RevengSupport.revengXml()` leaves it out.
 - **`MySQLMetaDataDialect.getSuggestedPrimaryKeyStrategyName`** runs MySQL-only `show table status`. On any
   other DB it now fails with a plain `RuntimeException` wrapping the `SQLException` (5.x: a typed
   `SQLGrammarException` with `getSQL()`).
-- **Exporter:** `POJOClass.getQualifiedDeclarationName()` repeats the package (`com.demo.hr.com.demo.hr.X`), and
-  a `DATE` column becomes `java.sql.Date` in generated code (5.x: `java.util.Date`).
-- **Logging:** Tools 6 logs every reverse-engineered table at INFO through java.util.logging; `Out` keeps only its
+- **Exporter:** `POJOClass.getQualifiedDeclarationName()` repeats the package (`com.demo.hr.com.demo.hr.X`) in
+  Tools 6.6 and 7.3.
+- **Logging:** Tools 6/7 log every reverse-engineered table at INFO through java.util.logging; `Out` keeps only its
   warnings (e.g. "Binding column twice should not happen", logged for `EMPLOYEE.DEPT_ID` and `EMPLOYEE_DETAIL.EMP_ID`,
   which are both a property column and a foreign-key column; reverse engineering still completes normally).
