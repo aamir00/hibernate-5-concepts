@@ -162,7 +162,7 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
   getQualifiedTableName()                        : PUBLIC.PUBLIC.EMPLOYEE_DETAIL
 
 === [Row 12/13/14] Column / Value / SimpleValue via table.getColumns() ===
-    EMP_ID      getSqlType()=null       getSqlTypeCode()=4     getSqlType(md)=integer        len=null   prec=null scale=null nullable=false unique=true  typeName=null (id value OneToOne: no generator getters in 7)
+    EMP_ID      getSqlType()=null       getSqlTypeCode()=4     getSqlType(md)=integer        len=null   prec=null scale=null nullable=false unique=true  typeName=null idGenerator=foreign params={}
     BIO         getSqlType()=null       getSqlTypeCode()=-1    getSqlType(md)=varchar(1000)  len=1000   prec=null scale=null nullable=true  unique=false typeName=text
   NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type. CHANGED in 6: getSqlType(Dialect, Mapping) was removed -> getSqlType(Metadata); getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2). REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties()/Parameters(); reverse-engineered values implement Tools' EnhancedValue, which still has the strategy and properties.
 
