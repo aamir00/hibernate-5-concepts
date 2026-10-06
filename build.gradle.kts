@@ -1,5 +1,5 @@
-// Standalone demo project: every Hibernate 5.6.15 class/concept used by wmstdappdbimpl,
-// shown with runnable Main classes. See README.md for the row -> Main index.
+// Standalone demo project: every Hibernate class/concept used by wmstdappdbimpl (5.6.15 originally),
+// ported to Hibernate ORM 7.3.13 + hibernate-tools-orm 7.3.13 and shown with runnable Main classes. See README.md for the row -> Main index.
 plugins {
     java
     application
@@ -16,15 +16,15 @@ java {
     }
 }
 
-val hibernateVersion = "5.6.15.Final"
+val hibernateVersion = "7.3.13.Final"
 
 dependencies {
-    implementation("org.hibernate:hibernate-core-jakarta:$hibernateVersion")
-    // Same excludes as wmstdappdbimpl: Tools 5.x drags in the javax hibernate-core, Ant and JDT.
-    implementation("org.hibernate:hibernate-tools:$hibernateVersion") {
-        exclude("org.hibernate", "hibernate-core")
+    implementation("org.hibernate.orm:hibernate-core:$hibernateVersion")
+    // tools-orm 7.3 depends on the same hibernate-core 7.3.13 (aligned pair). Ant is not referenced by
+    // tools-orm, and google-java-format is only used by an unused pretty-printer.
+    implementation("org.hibernate.tool:hibernate-tools-orm:$hibernateVersion") {
         exclude("org.apache.ant", "ant")
-        exclude("org.eclipse.jdt", "org.eclipse.jdt.core")
+        exclude("com.google.googlejavaformat", "google-java-format")
     }
     implementation("org.freemarker:freemarker:2.3.35")
     implementation("org.hsqldb:hsqldb:2.7.4")
