@@ -1,5 +1,6 @@
 package h5.concepts;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.hibernate.Hibernate;
@@ -18,21 +19,22 @@ import h5.concepts.entities.Employee;
 import h5.concepts.support.Out;
 
 /**
- * Rows 19–20 (FetchType, Hibernate CascadeType) shown <b>in action</b> on mapped entities, plus the
+ * Rows 19–20 (FetchType, cascade types) shown <b>in action</b> on mapped entities, plus the
  * Session / Transaction / Query APIs (rows 29–34) used with entities and HQL.
  * <p>
  * wmstdappdbimpl itself never runs entities: it only writes {@code FetchType} / {@code @Cascade} into the
- * Java code it generates for user apps ({@code RelationProperty}). This Main shows what those settings do
+ * Java code it generates for user apps ({@code RelationProperty}). In 7 the generated code should use JPA
+ * {@code cascade = {PERSIST, MERGE, REMOVE}} (see {@link Department}). This Main shows what those settings do
  * at runtime. It uses its own in-memory database ({@code entity_demo}) with tables created by hbm2ddl.
  * SQL is printed ({@code hibernate.show_sql}) so that lazy loading and cascades are visible.
  */
 public class EntityHqlMain {
 
     public static void main(String[] args) {
-        Out.banner("EntityHqlMain — @Entity + HQL: FetchType LAZY/EAGER, @Cascade SAVE_UPDATE/REMOVE");
+        Out.banner("EntityHqlMain — @Entity + HQL: FetchType LAZY/EAGER, JPA cascade PERSIST/MERGE/REMOVE");
         try (SessionFactory sessionFactory = createSessionFactory()) {
-            Integer engineeringId = cascadeSaveUpdate(sessionFactory);
-            cascadeOnPersistFlush(sessionFactory);
+            Integer engineeringId = cascadePersist(sessionFactory);
+            cascadeMerge(sessionFactory);
             fetchTypes(sessionFactory, engineeringId);
             hql(sessionFactory);
             cascadeRemove(sessionFactory, engineeringId);
@@ -58,35 +60,61 @@ public class EntityHqlMain {
         return sessionFactory;
     }
 
-    /** Row 20: SAVE_UPDATE — saveOrUpdate(department) also inserts the new employees in its collection. */
-    static Integer cascadeSaveUpdate(SessionFactory sessionFactory) {
-        Out.row("20", "@Cascade(SAVE_UPDATE) — session.saveOrUpdate(dept) cascades to new employees");
+    /** Row 20: cascade PERSIST — persist(department) also inserts the new employees in its collection. */
+    static Integer cascadePersist(SessionFactory sessionFactory) {
+        Out.row("20", "cascade = PERSIST — session.persist(dept) cascades to new employees");
         try (Session session = sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
             Department engineering = new Department("Engineering");
             engineering.addEmployee("Ada", 9100);
             engineering.addEmployee("Alan", 9500);
             engineering.addEmployee("Grace", 8700);
-            session.saveOrUpdate(engineering);
+            session.persist(engineering);
             tx.commit();
             Out.kv("employees saved through the cascade", countEmployees(session));
+            Out.note("REMOVED in 7: Session.saveOrUpdate/save/update/delete (deprecated in 6.0, removed in 7.0) -> "
+                + "persist (new) / merge (detached) / remove. CascadeType.SAVE_UPDATE is gone too -> JPA PERSIST + MERGE.");
+            hibernateCascadeTypeEnum();
             return engineering.getId();
         }
     }
 
-    /** Row 20: with the native bootstrap, SAVE_UPDATE is also applied when a persist()-ed entity is flushed. */
-    static void cascadeOnPersistFlush(SessionFactory sessionFactory) {
-        Out.row("20", "@Cascade(SAVE_UPDATE) + session.persist(dept) — cascade happens at flush");
+    /**
+     * Row 20: org.hibernate.annotations.CascadeType is deprecated for removal in 7, so it is not compiled against;
+     * it is looked up by name to show what is left of it.
+     */
+    private static void hibernateCascadeTypeEnum() {
+        try {
+            Class<?> cascadeType = Class.forName("org.hibernate.annotations.CascadeType");
+            Deprecated deprecated = cascadeType.getAnnotation(Deprecated.class);
+            Out.kv("org.hibernate.annotations.CascadeType constants", Arrays.toString(cascadeType.getEnumConstants()));
+            Out.kv("@Deprecated(forRemoval)", deprecated == null ? "not deprecated" : "since=" + deprecated.since()
+                + " forRemoval=" + deprecated.forRemoval());
+            Out.note("CHANGED in 7: @org.hibernate.annotations.Cascade and its CascadeType enum are deprecated for removal "
+                + "(SAVE_UPDATE and DELETE are already gone) -> Department uses JPA @OneToMany(cascade = {PERSIST, MERGE, REMOVE}).");
+        } catch (ClassNotFoundException e) {
+            Out.kv("org.hibernate.annotations.CascadeType", "not on the classpath");
+        }
+    }
+
+    /** Row 20: cascade MERGE — merging a detached department also inserts the employee added while it was detached. */
+    static void cascadeMerge(SessionFactory sessionFactory) {
+        Out.row("20", "cascade = MERGE — session.merge(detached dept) cascades to the new employee");
+        Department sales = new Department("Sales");
+        try (Session session = sessionFactory.openSession()) {
+            Transaction tx = session.beginTransaction();
+            session.persist(sales);
+            tx.commit();
+        }
+        sales.addEmployee("Linus", 7000); // sales is detached now
         try (Session session = sessionFactory.openSession()) {
             long before = countEmployees(session);
             Transaction tx = session.beginTransaction();
-            Department sales = new Department("Sales");
-            sales.addEmployee("Linus", 7000);
-            session.persist(sales);
+            session.merge(sales);
             tx.commit();
-            Out.kv("employees before / after persist(sales)", before + " / " + countEmployees(session));
-            Out.note("The new employee was inserted too: with the native Configuration bootstrap, Hibernate 5's "
-                + "flush-time cascade honours SAVE_UPDATE even for persist(). (SAVE_UPDATE is deprecated in 6 and removed in 7.)");
+            Out.kv("employees before / after merge(sales)", before + " / " + countEmployees(session));
+            Out.note("CHANGED in 7: in 5.6 SAVE_UPDATE also cascaded at flush for a persist()-ed entity; that was the job of "
+                + "saveOrUpdate() on detached entities, which is now merge() + cascade MERGE.");
         }
     }
 
@@ -97,7 +125,7 @@ public class EntityHqlMain {
         Out.row("19", "FetchType.LAZY — Department.employees is loaded only when first used");
         try (Session session = sessionFactory.openSession()) {
             stats.clear();
-            Department department = session.get(Department.class, departmentId);
+            Department department = session.find(Department.class, departmentId);
             Out.kv("Hibernate.isInitialized(employees)", Hibernate.isInitialized(department.getEmployees()));
             Out.kv("SQL statements so far", stats.getPrepareStatementCount());
             Out.line("calling department.getEmployees().size() ...");
@@ -119,10 +147,11 @@ public class EntityHqlMain {
         }
         try (Session session = sessionFactory.openSession()) {
             stats.clear();
-            Employee employee = session.get(Employee.class, 1);
-            Out.kv("session.get(Employee, 1): isInitialized(department)", Hibernate.isInitialized(employee.getDepartment()));
+            Employee employee = session.find(Employee.class, 1);
+            Out.kv("session.find(Employee, 1): isInitialized(department)", Hibernate.isInitialized(employee.getDepartment()));
             Out.kv("SQL statements", stats.getPrepareStatementCount());
-            Out.note("session.get() loads the EAGER to-one in the same SELECT via an outer join.");
+            Out.note("session.find() loads the EAGER to-one in the same SELECT via an outer join.");
+            Out.note("CHANGED in 7: Session.get(Class, id) is deprecated for removal (7.0) -> find(Class, id).");
         }
     }
 
@@ -151,21 +180,23 @@ public class EntityHqlMain {
 
             Out.row("32/33", "HQL bulk update — executeUpdate() inside a transaction, then rollback");
             Transaction tx = session.beginTransaction();
-            int updated = session.createQuery("update Employee e set e.salary = e.salary + 100").executeUpdate();
+            int updated = session.createMutationQuery("update Employee e set e.salary = e.salary + 100").executeUpdate();
             Out.kv("executeUpdate() rows", updated);
+            Out.note("CHANGED in 7: untyped createQuery(String) is deprecated (since 6.0) -> createMutationQuery(String) for update/delete.");
             tx.rollback();
         }
     }
 
-    /** Row 20: REMOVE — deleting the department deletes its employees. */
+    /** Row 20: REMOVE — removing the department removes its employees. */
     static void cascadeRemove(SessionFactory sessionFactory, Integer departmentId) {
-        Out.row("20", "@Cascade(REMOVE) — session.delete(dept) also deletes its employees");
+        Out.row("20", "cascade = REMOVE — session.remove(dept) also deletes its employees");
         try (Session session = sessionFactory.openSession()) {
             long before = countEmployees(session);
             Transaction tx = session.beginTransaction();
-            session.delete(session.get(Department.class, departmentId));
+            session.remove(session.find(Department.class, departmentId));
             tx.commit();
-            Out.kv("employees before / after delete", before + " / " + countEmployees(session));
+            Out.kv("employees before / after remove", before + " / " + countEmployees(session));
+            Out.note("REMOVED in 7: Session.delete(Object) -> remove(Object); Hibernate CascadeType.REMOVE -> JPA CascadeType.REMOVE.");
         }
     }
 

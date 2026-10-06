@@ -1,6 +1,6 @@
 package h5.concepts;
 
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 
 import org.hibernate.boot.Metadata;
@@ -8,8 +8,6 @@ import org.hibernate.boot.internal.MetadataImpl;
 import org.hibernate.boot.model.naming.Identifier;
 import org.hibernate.boot.model.relational.QualifiedNameImpl;
 import org.hibernate.boot.registry.internal.StandardServiceRegistryImpl;
-import org.hibernate.dialect.Dialect;
-import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.ForeignKey;
 import org.hibernate.mapping.PersistentClass;
@@ -18,6 +16,7 @@ import org.hibernate.mapping.SimpleValue;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.UniqueKey;
 import org.hibernate.mapping.Value;
+import org.hibernate.tool.internal.reveng.util.EnhancedValue;
 import org.hibernate.type.StandardBasicTypes;
 
 import h5.concepts.support.Out;
@@ -28,7 +27,8 @@ import h5.concepts.support.RevengSupport;
  * <p>
  * The demo HR schema is reverse engineered into a {@link Metadata}, and then each {@link PersistentClass} is
  * walked the way wmstdappdbimpl's {@code DataModelExporter} / {@code RelationsMapper} /
- * {@code HibernateColumnMetaProvider} do (raw iterators, casts, generator strategy and properties).
+ * {@code HibernateColumnMetaProvider} do (collections, casts, generator strategy and properties).
+ * The 5.x iterator getters are gone in 7; each row notes the replacement.
  */
 public class MappingModelMain {
 
@@ -60,11 +60,7 @@ public class MappingModelMain {
         Out.note("wmstdappdbimpl (WMMySQLMetaDataDialect) builds one only to put a readable table name in error messages.");
     }
 
-    @SuppressWarnings("rawtypes")
     static void mappingModel(Metadata metadata) {
-        Dialect dialect = ((MetadataImpl) metadata).getBootstrapContext().getServiceRegistry()
-            .getService(JdbcEnvironment.class).getDialect();
-
         for (PersistentClass persistentClass : metadata.getEntityBindings()) {
             Out.row("10", "PersistentClass  " + persistentClass.getEntityName());
             Out.kv("getClassName()", persistentClass.getClassName());
@@ -76,60 +72,68 @@ public class MappingModelMain {
             Out.kv("getSchema() / getCatalog()", table.getSchema() + " / " + table.getCatalog());
             Out.kv("getQualifiedTableName()", table.getQualifiedTableName());
 
-            Out.row("12/13/14", "Column / Value / SimpleValue via table.getColumnIterator()");
-            Iterator columnIterator = table.getColumnIterator();
-            while (columnIterator.hasNext()) {
-                Column column = (Column) columnIterator.next();
+            Out.row("12/13/14", "Column / Value / SimpleValue via table.getColumns()");
+            for (Column column : table.getColumns()) {
                 Value value = column.getValue();
                 String generator = "";
                 if (value.isSimpleValue()) {
                     SimpleValue simpleValue = (SimpleValue) value;
                     generator = " typeName=" + simpleValue.getTypeName();
-                    if (simpleValue.getIdentifierGeneratorStrategy() != null && table.getPrimaryKey().containsColumn(column)) {
-                        generator += " idGenerator=" + simpleValue.getIdentifierGeneratorStrategy()
-                            + " params=" + simpleValue.getIdentifierGeneratorProperties();
+                    // The generator getters left SimpleValue in 7; Tools' reverse-engineered id values keep them.
+                    if (persistentClass.getIdentifier() instanceof EnhancedValue enhancedId
+                            && enhancedId.getIdentifierGeneratorStrategy() != null && table.getPrimaryKey().containsColumn(column)) {
+                        generator += " idGenerator=" + enhancedId.getIdentifierGeneratorStrategy()
+                            + " params=" + enhancedId.getIdentifierGeneratorProperties();
                     }
                 }
                 // wmstdappdbimpl (HibernateColumnMetaProvider) reads the no-arg getSqlType()/getSqlTypeCode(), which the
-                // Tools JDBC binder fills from DatabaseMetaData; the (Dialect, Mapping) forms resolve via the dialect.
-                System.out.printf("    %-11s getSqlType()=%-10s getSqlTypeCode()=%-5s getSqlType(d,m)=%-14s len=%-6d prec=%-3d scale=%-2d nullable=%-5s unique=%-5s%s%n",
-                    column.getName(), column.getSqlType(), column.getSqlTypeCode(), column.getSqlType(dialect, metadata),
+                // Tools JDBC binder fills from DatabaseMetaData; getSqlType(Metadata) resolves via the dialect.
+                System.out.printf("    %-11s getSqlType()=%-10s getSqlTypeCode()=%-5s getSqlType(md)=%-14s len=%-6s prec=%-4s scale=%-4s nullable=%-5s unique=%-5s%s%n",
+                    column.getName(), column.getSqlType(), column.getSqlTypeCode(), column.getSqlType(metadata),
                     column.getLength(), column.getPrecision(), column.getScale(),
                     column.isNullable(), column.isUnique(), generator);
             }
-            Out.note("For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC "
-                + "type. getLength()/getPrecision()/getScale() are int in 5.x; unset ones show the defaults 255/19/2.");
+            Out.note("For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type.");
+            Out.note("CHANGED in 7: Table.getColumnIterator() -> getColumns() (removed in 6.0); "
+                + "Column.getSqlType(Dialect, Mapping) -> getSqlType(Metadata) (removed in 6.0); "
+                + "getLength()/getPrecision()/getScale() int -> Long/Integer/Integer, unset ones are null instead of 255/19/2 (6.0).");
+            Out.note("REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties() (7.0, no core "
+                + "boot-model equivalent) -> read them from the entity's identifier (PersistentClass.getIdentifier()), which for "
+                + "reverse-engineered metadata is Tools' EnhancedBasicValue implementing org.hibernate.tool.internal.reveng.util.EnhancedValue. "
+                + "(Column.getValue() of a PK column that is also a one-to-one FK is the OneToOne, which never carries a generator in 7.)");
 
-            Out.row("15", "PrimaryKey via table.getPrimaryKey().getColumnIterator()");
+            Out.row("15", "PrimaryKey via table.getPrimaryKey().getColumns()");
             PrimaryKey primaryKey = table.getPrimaryKey();
             if (primaryKey != null) {
-                Out.kv(primaryKey.getName(), columnNames(primaryKey.getColumnIterator()));
+                Out.kv(primaryKey.getName(), columnNames(primaryKey.getColumns()));
             }
+            Out.note("CHANGED in 7: Constraint.getColumnIterator() -> getColumns() (removed in 6.0).");
 
-            Out.row("16", "UniqueKey via table.getUniqueKeyIterator()");
-            Iterator<UniqueKey> uniqueKeys = table.getUniqueKeyIterator();
-            if (!uniqueKeys.hasNext()) {
+            Out.row("16", "UniqueKey via table.getUniqueKeys().values()");
+            Collection<UniqueKey> uniqueKeys = table.getUniqueKeys().values();
+            if (uniqueKeys.isEmpty()) {
                 Out.line("(none)");
             }
-            while (uniqueKeys.hasNext()) {
-                UniqueKey uniqueKey = uniqueKeys.next();
-                Out.kv(uniqueKey.getName(), columnNames(uniqueKey.getColumnIterator()));
+            for (UniqueKey uniqueKey : uniqueKeys) {
+                Out.kv(uniqueKey.getName(), columnNames(uniqueKey.getColumns()));
             }
+            Out.note("CHANGED in 7: Table.getUniqueKeyIterator() -> getUniqueKeys().values() (iterator removed in 7.0).");
 
-            Out.row("17", "ForeignKey via table.getForeignKeyIterator()");
-            Iterator<ForeignKey> foreignKeys = table.getForeignKeyIterator();
-            if (!foreignKeys.hasNext()) {
+            Out.row("17", "ForeignKey via table.getForeignKeyCollection()");
+            Collection<ForeignKey> foreignKeys = table.getForeignKeyCollection();
+            if (foreignKeys.isEmpty()) {
                 Out.line("(none)");
             }
-            while (foreignKeys.hasNext()) {
-                ForeignKey foreignKey = foreignKeys.next();
-                List referenced = foreignKey.getReferencedColumns(); // raw List in 5.x
+            for (ForeignKey foreignKey : foreignKeys) {
+                List<Column> referenced = foreignKey.getReferencedColumns(); // typed List<Column> since 6
                 String target = referenced.isEmpty()
                     ? "(PK of referenced table)"
-                    : ((Column) referenced.get(0)).getName() + (referenced.size() > 1 ? ",..." : "");
-                Out.kv(foreignKey.getName(), columnNames(foreignKey.getColumnIterator()) + " -> "
+                    : referenced.get(0).getName() + (referenced.size() > 1 ? ",..." : "");
+                Out.kv(foreignKey.getName(), columnNames(foreignKey.getColumns()) + " -> "
                     + foreignKey.getReferencedTable().getName() + "." + target);
             }
+            Out.note("CHANGED in 7: Table.getForeignKeyIterator() -> getForeignKeyCollection() (iterator removed in 7.0; "
+                + "getForeignKeys() is deprecated for removal in 7); ForeignKey.getReferencedColumns() is a typed List<Column>.");
         }
     }
 
@@ -139,14 +143,15 @@ public class MappingModelMain {
         Out.kv("TEXT.getName()", StandardBasicTypes.TEXT.getName());
         Out.kv("INTEGER.getName()", StandardBasicTypes.INTEGER.getName());
         Out.kv("BIG_DECIMAL.getName()", StandardBasicTypes.BIG_DECIMAL.getName());
-        Out.kv("STRING class (a Type instance in 5.x)", Out.simpleName(StandardBasicTypes.STRING));
+        Out.kv("STRING class", Out.simpleName(StandardBasicTypes.STRING));
+        Out.note("CHANGED in 7: the constants are BasicTypeReference<T> (since 6.0), not Type instances; getName() is unchanged.");
         Out.line("The reveng.xml used by RevengSupport maps VARCHAR(1000) -> \"" + StandardBasicTypes.TEXT.getName()
             + "\", so EMPLOYEE_DETAIL.BIO above shows typeName=text instead of string (no override touches EMPLOYEE.NOTES, so the CLOB stays clob).");
     }
 
-    private static String columnNames(Iterator<Column> columns) {
+    private static String columnNames(Collection<Column> columns) {
         StringBuilder sb = new StringBuilder("(");
-        columns.forEachRemaining(c -> sb.append(sb.length() > 1 ? ", " : "").append(c.getName()));
+        columns.forEach(c -> sb.append(sb.length() > 1 ? ", " : "").append(c.getName()));
         return sb.append(")").toString();
     }
 }

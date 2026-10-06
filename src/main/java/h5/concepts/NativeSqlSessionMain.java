@@ -1,9 +1,9 @@
 package h5.concepts;
 
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -21,8 +21,8 @@ import org.hibernate.Transaction;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.internal.AbstractScrollableResults;
 import org.hibernate.internal.SessionImpl;
+import org.hibernate.internal.scrollable.AbstractScrollableResults;
 import org.hibernate.query.Query;
 
 import h5.concepts.support.DemoDatabase;
@@ -61,23 +61,24 @@ public class NativeSqlSessionMain {
     }
 
     /** Rows 30, 33 — Session + native Query: parameters, paging, list(), uniqueResult(). */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     static void queryApi(SessionFactory sessionFactory) {
         try (Session session = sessionFactory.openSession()) {
             Out.row("30", "Session — sessionFactory.openSession()");
             Out.kv("session", Out.simpleName(session));
             Out.kv("isOpen() / isConnected()", session.isOpen() + " / " + session.isConnected());
 
-            Out.row("33", "org.hibernate.query.Query — session.createNativeQuery(sql) + named parameter");
-            Query query = session.createNativeQuery(
-                "SELECT EMP_ID, FIRST_NAME, SALARY FROM EMPLOYEE WHERE SALARY > :minSalary ORDER BY EMP_ID");
+            Out.row("33", "org.hibernate.query.Query — session.createNativeQuery(sql, Object[].class) + named parameter");
+            Query<Object[]> query = session.createNativeQuery(
+                "SELECT EMP_ID, FIRST_NAME, SALARY FROM EMPLOYEE WHERE SALARY > :minSalary ORDER BY EMP_ID", Object[].class);
             query.setParameter("minSalary", new BigDecimal("8000"));
             Out.kv("query class", Out.simpleName(query));
             List<Object[]> rows = query.list();
             rows.forEach(r -> Out.line("  " + r[0] + "  " + r[1] + "  " + r[2]));
+            Out.note("CHANGED in 7: untyped createNativeQuery(String) is deprecated (since 6.0) -> createNativeQuery(sql, Object[].class) "
+                + "(or Object.class / a scalar class for one column); the raw Query becomes Query<Object[]>.");
 
             Out.row("33", "Query paging — setFirstResult(1).setMaxResults(2)");
-            List<Object[]> page = session.createNativeQuery("SELECT EMP_ID, FIRST_NAME FROM EMPLOYEE ORDER BY EMP_ID")
+            List<Object[]> page = session.createNativeQuery("SELECT EMP_ID, FIRST_NAME FROM EMPLOYEE ORDER BY EMP_ID", Object[].class)
                 .setFirstResult(1)
                 .setMaxResults(2)
                 .list();
@@ -85,50 +86,62 @@ public class NativeSqlSessionMain {
             Out.note("The dialect's LimitHandler rewrites the SQL for paging (HSQLDB: OFFSET/LIMIT).");
 
             Out.row("33", "Query.uniqueResult() — count query (QueryProcedureTester runs one before the page)");
-            Object count = session.createNativeQuery("SELECT COUNT(*) FROM EMPLOYEE").uniqueResult();
+            Object count = session.createNativeQuery("SELECT COUNT(*) FROM EMPLOYEE", Object.class).uniqueResult();
             Out.kv("count", count + "  (" + count.getClass().getSimpleName() + ")");
+            Out.note("CHANGED in 7: a native COUNT(*) comes back as Long (BigInteger in 5.6; changed in 6.0).");
         }
     }
 
-    /** Rows 33, 34, 35 — query.scroll(), and getting the JDBC ResultSet out of it by reflection. */
-    @SuppressWarnings("rawtypes")
+    /** Rows 33, 34, 35 — query.scroll(), and reading the result columns' JDBC metadata. */
     static void scrollableResults(SessionFactory sessionFactory) throws Exception {
         try (Session session = sessionFactory.openSession()) {
-            Out.row("34", "ScrollableResults — query.scroll() (cursor; rows are not all loaded into memory)");
-            Query query = session.createNativeQuery("SELECT EMP_ID, FIRST_NAME, HIRED_ON FROM EMPLOYEE ORDER BY EMP_ID");
-            ScrollableResults scroll = query.scroll(ScrollMode.FORWARD_ONLY);
-            try {
+            Out.row("34", "ScrollableResults<Object[]> — query.scroll(FORWARD_ONLY) (cursor; rows are not all loaded into memory)");
+            String sql = "SELECT EMP_ID, FIRST_NAME, HIRED_ON FROM EMPLOYEE ORDER BY EMP_ID";
+            Query<Object[]> query = session.createNativeQuery(sql, Object[].class);
+            try (ScrollableResults<Object[]> scroll = query.scroll(ScrollMode.FORWARD_ONLY)) {
                 Out.kv("scroll class", Out.simpleName(scroll));
+                Object hiredOn = null;
                 while (scroll.next()) {
-                    Object[] row = scroll.get(); // raw Object[] in 5.x
-                    Out.line("  row " + scroll.getRowNumber() + ": " + row[0] + " " + row[1] + " " + row[2]);
+                    Object[] row = scroll.get(); // typed by the query's result class since 6
+                    Out.line("  row " + scroll.getPosition() + ": " + row[0] + " " + row[1] + " " + row[2]);
+                    hiredOn = row[2];
                 }
-            } finally {
-                scroll.close();
+                Out.kv("HIRED_ON (DATE) Java type", Out.simpleName(hiredOn));
             }
+            Out.note("CHANGED in 7: ScrollableResults is generic (6.0) and only AutoCloseable (7.0); getRowNumber() is deprecated "
+                + "for removal (7.0) -> getPosition(), which is 1-based (getRowNumber() was 0-based).");
+            Out.note("CHANGED in 7: native DATE columns come back as java.time.LocalDate (java.sql.Date in 5.6; changed in 7.0).");
+            Out.note("CHANGED in 7: no-arg query.scroll() uses the dialect's SCROLL_INSENSITIVE mode and throws AssertionFailure "
+                + "('scrollable result sets are not enabled') while hibernate.boot.allow_jdbc_metadata_access=false -> pass ScrollMode.FORWARD_ONLY.");
 
             Out.row("35", "AbstractScrollableResults.getResultSet() — protected, called by reflection");
-            ScrollableResults metaScroll = query.scroll();
-            try {
-                ResultSet resultSet = getResultSet(metaScroll);
-                ResultSetMetaData metaData = resultSet.getMetaData();
-                for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                    Out.kv("column " + i + " " + metaData.getColumnLabel(i),
-                        metaData.getColumnTypeName(i) + " (java " + metaData.getColumnClassName(i) + ")");
+            try (ScrollableResults<Object[]> metaScroll = query.scroll(ScrollMode.FORWARD_ONLY)) {
+                Out.kv("scroll instanceof AbstractScrollableResults", metaScroll instanceof AbstractScrollableResults);
+                try {
+                    AbstractScrollableResults.class.getDeclaredMethod("getResultSet");
+                    Out.kv("AbstractScrollableResults.getResultSet()", "present");
+                } catch (NoSuchMethodException e) {
+                    Out.kv("AbstractScrollableResults.getResultSet()", "NoSuchMethodException");
                 }
-                Out.note("wmstdappdbimpl (QueryProcedureTester) reads the result columns' metadata this way, then "
-                    + "calls query.list() for the data.");
-            } finally {
-                metaScroll.close();
             }
+            Out.note("REMOVED in 7: AbstractScrollableResults.getResultSet() (removed in 6.0; the class moved to "
+                + "org.hibernate.internal.scrollable in 7.0). Supported replacement: run the SQL through "
+                + "session.doReturningWork(..) and read the JDBC ResultSetMetaData:");
+            int columnCount = session.doReturningWork(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(sql);
+                     ResultSet resultSet = statement.executeQuery()) {
+                    ResultSetMetaData metaData = resultSet.getMetaData();
+                    for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                        Out.kv("column " + i + " " + metaData.getColumnLabel(i),
+                            metaData.getColumnTypeName(i) + " (java " + metaData.getColumnClassName(i) + ")");
+                    }
+                    return metaData.getColumnCount();
+                }
+            });
+            Out.kv("doReturningWork(..) column count", columnCount);
+            Out.note("wmstdappdbimpl (QueryProcedureTester) reads the result columns' metadata this way, then "
+                + "calls query.list() for the data.");
         }
-    }
-
-    /** Same code as QueryProcedureTester.getResultSet(ScrollableResults). */
-    private static ResultSet getResultSet(ScrollableResults scroll) throws Exception {
-        Method resultSetMethod = AbstractScrollableResults.class.getDeclaredMethod("getResultSet");
-        resultSetMethod.setAccessible(true);
-        return (ResultSet) resultSetMethod.invoke(scroll);
     }
 
     /** Rows 32, 33 — Transaction: begin, executeUpdate(), rollback / commit. */
@@ -137,7 +150,7 @@ public class NativeSqlSessionMain {
             Out.row("32", "Transaction — beginTransaction(), executeUpdate(), rollback()");
             Transaction tx = session.beginTransaction();
             Out.kv("tx class / status", Out.simpleName(tx) + " / " + tx.getStatus());
-            int updated = session.createNativeQuery("UPDATE EMPLOYEE SET SALARY = SALARY + 1000 WHERE DEPT_ID = :dept")
+            int updated = session.createNativeMutationQuery("UPDATE EMPLOYEE SET SALARY = SALARY + 1000 WHERE DEPT_ID = :dept")
                 .setParameter("dept", 0)
                 .executeUpdate();
             Out.kv("executeUpdate() rows", updated);
@@ -148,22 +161,23 @@ public class NativeSqlSessionMain {
 
             Out.row("32", "Transaction — commit()");
             tx = session.beginTransaction();
-            session.createNativeQuery("INSERT INTO AUDIT_LOG VALUES ('NativeSqlSessionMain ran')").executeUpdate();
+            session.createNativeMutationQuery("INSERT INTO AUDIT_LOG VALUES ('NativeSqlSessionMain ran')").executeUpdate();
             tx.commit();
             Out.kv("tx status after commit()", tx.getStatus());
-            Out.kv("AUDIT_LOG rows", session.createNativeQuery("SELECT COUNT(*) FROM AUDIT_LOG").uniqueResult());
+            Out.kv("AUDIT_LOG rows", session.createNativeQuery("SELECT COUNT(*) FROM AUDIT_LOG", Object.class).uniqueResult());
+            Out.note("CHANGED in 7: native DML goes through createNativeMutationQuery(sql) (untyped createNativeQuery deprecated since 6.0).");
         }
     }
 
     private static Object salaryOfAda(Session session) {
-        return session.createNativeQuery("SELECT SALARY FROM EMPLOYEE WHERE FIRST_NAME = 'Ada'").uniqueResult();
+        return session.createNativeQuery("SELECT SALARY FROM EMPLOYEE WHERE FIRST_NAME = 'Ada'", Object.class).uniqueResult();
     }
 
-    /** Rows 30, 31 — getting the JDBC Connection: SessionImpl.connection() vs the public session.doWork(..). */
+    /** Rows 30, 31 — getting the JDBC Connection: through SessionImpl internals vs the public session.doWork(..). */
     static void jdbcConnectionAccess(SessionFactory sessionFactory) {
         try (Session session = sessionFactory.openSession()) {
-            Out.row("31", "SessionImpl.connection() — cast to the internal impl to get the JDBC Connection");
-            Connection connection = ((SessionImpl) session).connection();
+            Out.row("31", "SessionImpl.getJdbcCoordinator()...getPhysicalConnection() — cast to the internal impl to get the JDBC Connection");
+            Connection connection = ((SessionImpl) session).getJdbcCoordinator().getLogicalConnection().getPhysicalConnection();
             try (CallableStatement call = connection.prepareCall("{call EMPLOYEE_COUNT(?, ?)}")) {
                 call.setInt(1, 0);
                 call.registerOutParameter(2, Types.INTEGER);
@@ -173,6 +187,8 @@ public class NativeSqlSessionMain {
                 throw new IllegalStateException(e);
             }
             Out.note("wmstdappdbimpl (QueryProcedureTester) tests stored procedures through this connection.");
+            Out.note("REMOVED in 7: SessionImpl.connection() (removed in 6.0). Closest drop-in is the SPI route above; "
+                + "the supported public API is session.doWork(..) / doReturningWork(..) (row 30 below), which real code should move to.");
 
             Out.row("30", "Session.doWork(connection -> ...) — the public way to reach the JDBC Connection");
             session.doWork(conn -> {
@@ -192,17 +208,18 @@ public class NativeSqlSessionMain {
     /** Rows 36, 37 — the exception hierarchy a failing query surfaces as. */
     static void exceptions(SessionFactory sessionFactory) {
         try (Session session = sessionFactory.openSession()) {
-            Out.row("36/37", "Query.list() on a missing table -> PersistenceException wrapping a HibernateException");
+            Out.row("36/37", "Query.list() on a missing table -> the HibernateException (a PersistenceException) thrown directly");
             Out.line("(the WARN/ERROR SqlExceptionHelper lines are Hibernate logging the failure — expected)");
             try {
-                session.createNativeQuery("SELECT * FROM NO_SUCH_TABLE").list();
+                session.createNativeQuery("SELECT * FROM NO_SUCH_TABLE", Object[].class).list();
             } catch (PersistenceException e) {
                 Out.kv("caught (catch PersistenceException)", e.getClass().getName());
                 Out.kv("e instanceof HibernateException", e instanceof HibernateException);
                 Out.kv("e.getCause() instanceof HibernateException", e.getCause() instanceof HibernateException);
                 printChainAndHierarchy(e);
-                Out.note("Query/Session JPA-style methods convert HibernateException into a plain "
-                    + "PersistenceException, so 'catch (HibernateException)' would NOT catch this one.");
+                Out.note("CHANGED in 7: 5.6 wrapped the SQLGrammarException in a plain PersistenceException; since 6.0 it is "
+                    + "thrown directly. 'catch (PersistenceException)' still works and 'catch (HibernateException)' now catches it "
+                    + "too, but code that unwraps e.getCause() breaks -> check 'e instanceof JDBCException' instead.");
             }
 
             Out.row("37", "session.doWork(..) failing -> HibernateException (JDBCException) thrown directly");

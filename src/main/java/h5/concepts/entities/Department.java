@@ -3,6 +3,7 @@ package h5.concepts.entities;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -10,13 +11,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-
 /**
- * Rows 19, 20. The collection side uses {@code FetchType.LAZY} and Hibernate's own {@code @Cascade}
- * with {@code SAVE_UPDATE} + {@code REMOVE}, the two cascade types wmstdappdbimpl's code generator
- * ({@code RelationProperty}) writes into generated entities.
+ * Rows 19, 20. The collection side uses {@code FetchType.LAZY}. In 5.6 it carried Hibernate's own
+ * {@code @Cascade({SAVE_UPDATE, REMOVE})}, the two cascade types wmstdappdbimpl's code generator
+ * ({@code RelationProperty}) writes into generated entities. In 7, {@code SAVE_UPDATE} is gone and
+ * {@code @Cascade}/{@code org.hibernate.annotations.CascadeType} are deprecated for removal, so the
+ * mapping uses JPA {@code cascade = {PERSIST, MERGE, REMOVE}} instead.
  */
 @Entity
 public class Department {
@@ -27,8 +27,8 @@ public class Department {
 
     private String name;
 
-    @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
-    @Cascade({CascadeType.SAVE_UPDATE, CascadeType.REMOVE})
+    @OneToMany(mappedBy = "department", fetch = FetchType.LAZY,
+        cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
     private List<Employee> employees = new ArrayList<>();
 
     protected Department() {
