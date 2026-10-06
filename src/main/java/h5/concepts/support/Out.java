@@ -10,11 +10,16 @@ package h5.concepts.support;
  */
 public final class Out {
 
+    /** Hibernate Tools 6+ logs through java.util.logging at INFO; held here so the level set below sticks. */
+    private static final java.util.logging.Logger TOOLS_LOGGER = java.util.logging.Logger.getLogger("org.hibernate.tool");
+
     static {
         // Hibernate logs through jboss-logging; route it to slf4j-simple (configured at WARN in
         // simplelogger.properties). This runs before any Hibernate logger is created because every
         // Main calls Out.banner(..) first.
         System.setProperty("org.jboss.logging.provider", "slf4j");
+        // Keep only warnings from Tools' reverse-engineering binders (they log every table at INFO).
+        TOOLS_LOGGER.setLevel(java.util.logging.Level.WARNING);
     }
 
     private Out() {
