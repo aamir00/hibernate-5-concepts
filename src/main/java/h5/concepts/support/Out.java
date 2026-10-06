@@ -18,8 +18,17 @@ public final class Out {
         // simplelogger.properties). This runs before any Hibernate logger is created because every
         // Main calls Out.banner(..) first.
         System.setProperty("org.jboss.logging.provider", "slf4j");
-        // Keep only warnings from Tools' reverse-engineering binders (they log every table at INFO).
+        // Keep only warnings from Tools' reverse-engineering binders (they log every table at INFO), and print them on
+        // stdout (java.util.logging's console handler uses stderr) so they stay in order with the narration.
         TOOLS_LOGGER.setLevel(java.util.logging.Level.WARNING);
+        TOOLS_LOGGER.setUseParentHandlers(false);
+        TOOLS_LOGGER.addHandler(new java.util.logging.StreamHandler(System.out, new java.util.logging.SimpleFormatter()) {
+            @Override
+            public synchronized void publish(java.util.logging.LogRecord record) {
+                super.publish(record);
+                flush();
+            }
+        });
     }
 
     private Out() {
