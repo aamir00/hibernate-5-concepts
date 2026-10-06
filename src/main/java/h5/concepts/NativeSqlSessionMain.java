@@ -1,0 +1,235 @@
+package h5.concepts;
+
+import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.List;
+
+import jakarta.persistence.PersistenceException;
+
+import org.hibernate.HibernateException;
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.internal.AbstractScrollableResults;
+import org.hibernate.internal.SessionImpl;
+import org.hibernate.query.Query;
+
+import h5.concepts.support.DemoDatabase;
+import h5.concepts.support.Out;
+
+/**
+ * Rows 29–37: runtime APIs on an <b>entity-less</b> SessionFactory, the way wmstdappdbimpl uses Hibernate to test
+ * user queries and procedures from Studio ({@code DBConnectionUtils}, {@code QueryProcedureTester},
+ * {@code DatabaseQueryAndProcedureMetaManagerImpl}). No entities are mapped; everything is native SQL.
+ */
+public class NativeSqlSessionMain {
+
+    public static void main(String[] args) throws Exception {
+        Out.banner("NativeSqlSessionMain — SessionFactory, Session, Transaction, Query, ScrollableResults, JDBC access, exceptions");
+        DemoDatabase.ensureCreated();
+        try (SessionFactory sessionFactory = createSessionFactory()) {
+            queryApi(sessionFactory);
+            scrollableResults(sessionFactory);
+            transactions(sessionFactory);
+            jdbcConnectionAccess(sessionFactory);
+            exceptions(sessionFactory);
+        }
+    }
+
+    /** Row 29 — same shape as DBConnectionUtils.createSessionFactory. */
+    static SessionFactory createSessionFactory() {
+        Out.row("29", "SessionFactory — Configuration + StandardServiceRegistry, no mapped entities");
+        Configuration cfg = new Configuration();
+        DemoDatabase.hibernateProperties().forEach((k, v) -> cfg.setProperty((String) k, (String) v));
+        StandardServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(cfg.getProperties()).build();
+        SessionFactory sessionFactory = cfg.buildSessionFactory(serviceRegistry);
+        Out.kv("sessionFactory", Out.simpleName(sessionFactory));
+        Out.kv("isOpen()", sessionFactory.isOpen());
+        Out.note("Closing the SessionFactory also destroys this service registry (it owns it).");
+        return sessionFactory;
+    }
+
+    /** Rows 30, 33 — Session + native Query: parameters, paging, list(), uniqueResult(). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static void queryApi(SessionFactory sessionFactory) {
+        try (Session session = sessionFactory.openSession()) {
+            Out.row("30", "Session — sessionFactory.openSession()");
+            Out.kv("session", Out.simpleName(session));
+            Out.kv("isOpen() / isConnected()", session.isOpen() + " / " + session.isConnected());
+
+            Out.row("33", "org.hibernate.query.Query — session.createNativeQuery(sql) + named parameter");
+            Query query = session.createNativeQuery(
+                "SELECT EMP_ID, FIRST_NAME, SALARY FROM EMPLOYEE WHERE SALARY > :minSalary ORDER BY EMP_ID");
+            query.setParameter("minSalary", new BigDecimal("8000"));
+            Out.kv("query class", Out.simpleName(query));
+            List<Object[]> rows = query.list();
+            rows.forEach(r -> Out.line("  " + r[0] + "  " + r[1] + "  " + r[2]));
+
+            Out.row("33", "Query paging — setFirstResult(1).setMaxResults(2)");
+            List<Object[]> page = session.createNativeQuery("SELECT EMP_ID, FIRST_NAME FROM EMPLOYEE ORDER BY EMP_ID")
+                .setFirstResult(1)
+                .setMaxResults(2)
+                .list();
+            page.forEach(r -> Out.line("  " + r[0] + "  " + r[1]));
+            Out.note("The dialect's LimitHandler rewrites the SQL for paging (HSQLDB: OFFSET/LIMIT).");
+
+            Out.row("33", "Query.uniqueResult() — count query (QueryProcedureTester runs one before the page)");
+            Object count = session.createNativeQuery("SELECT COUNT(*) FROM EMPLOYEE").uniqueResult();
+            Out.kv("count", count + "  (" + count.getClass().getSimpleName() + ")");
+        }
+    }
+
+    /** Rows 33, 34, 35 — query.scroll(), and getting the JDBC ResultSet out of it by reflection. */
+    @SuppressWarnings("rawtypes")
+    static void scrollableResults(SessionFactory sessionFactory) throws Exception {
+        try (Session session = sessionFactory.openSession()) {
+            Out.row("34", "ScrollableResults — query.scroll() (cursor; rows are not all loaded into memory)");
+            Query query = session.createNativeQuery("SELECT EMP_ID, FIRST_NAME, HIRED_ON FROM EMPLOYEE ORDER BY EMP_ID");
+            ScrollableResults scroll = query.scroll(ScrollMode.FORWARD_ONLY);
+            try {
+                Out.kv("scroll class", Out.simpleName(scroll));
+                while (scroll.next()) {
+                    Object[] row = scroll.get(); // raw Object[] in 5.x
+                    Out.line("  row " + scroll.getRowNumber() + ": " + row[0] + " " + row[1] + " " + row[2]);
+                }
+            } finally {
+                scroll.close();
+            }
+
+            Out.row("35", "AbstractScrollableResults.getResultSet() — protected, called by reflection");
+            ScrollableResults metaScroll = query.scroll();
+            try {
+                ResultSet resultSet = getResultSet(metaScroll);
+                ResultSetMetaData metaData = resultSet.getMetaData();
+                for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                    Out.kv("column " + i + " " + metaData.getColumnLabel(i),
+                        metaData.getColumnTypeName(i) + " (java " + metaData.getColumnClassName(i) + ")");
+                }
+                Out.note("wmstdappdbimpl (QueryProcedureTester) reads the result columns' metadata this way, then "
+                    + "calls query.list() for the data.");
+            } finally {
+                metaScroll.close();
+            }
+        }
+    }
+
+    /** Same code as QueryProcedureTester.getResultSet(ScrollableResults). */
+    private static ResultSet getResultSet(ScrollableResults scroll) throws Exception {
+        Method resultSetMethod = AbstractScrollableResults.class.getDeclaredMethod("getResultSet");
+        resultSetMethod.setAccessible(true);
+        return (ResultSet) resultSetMethod.invoke(scroll);
+    }
+
+    /** Rows 32, 33 — Transaction: begin, executeUpdate(), rollback / commit. */
+    static void transactions(SessionFactory sessionFactory) {
+        try (Session session = sessionFactory.openSession()) {
+            Out.row("32", "Transaction — beginTransaction(), executeUpdate(), rollback()");
+            Transaction tx = session.beginTransaction();
+            Out.kv("tx class / status", Out.simpleName(tx) + " / " + tx.getStatus());
+            int updated = session.createNativeQuery("UPDATE EMPLOYEE SET SALARY = SALARY + 1000 WHERE DEPT_ID = :dept")
+                .setParameter("dept", 0)
+                .executeUpdate();
+            Out.kv("executeUpdate() rows", updated);
+            Out.kv("Ada's salary inside tx", salaryOfAda(session));
+            tx.rollback();
+            Out.kv("tx status after rollback()", tx.getStatus());
+            Out.kv("Ada's salary after rollback", salaryOfAda(session));
+
+            Out.row("32", "Transaction — commit()");
+            tx = session.beginTransaction();
+            session.createNativeQuery("INSERT INTO AUDIT_LOG VALUES ('NativeSqlSessionMain ran')").executeUpdate();
+            tx.commit();
+            Out.kv("tx status after commit()", tx.getStatus());
+            Out.kv("AUDIT_LOG rows", session.createNativeQuery("SELECT COUNT(*) FROM AUDIT_LOG").uniqueResult());
+        }
+    }
+
+    private static Object salaryOfAda(Session session) {
+        return session.createNativeQuery("SELECT SALARY FROM EMPLOYEE WHERE FIRST_NAME = 'Ada'").uniqueResult();
+    }
+
+    /** Rows 30, 31 — getting the JDBC Connection: SessionImpl.connection() vs the public session.doWork(..). */
+    static void jdbcConnectionAccess(SessionFactory sessionFactory) {
+        try (Session session = sessionFactory.openSession()) {
+            Out.row("31", "SessionImpl.connection() — cast to the internal impl to get the JDBC Connection");
+            Connection connection = ((SessionImpl) session).connection();
+            try (CallableStatement call = connection.prepareCall("{call EMPLOYEE_COUNT(?, ?)}")) {
+                call.setInt(1, 0);
+                call.registerOutParameter(2, Types.INTEGER);
+                call.execute();
+                Out.kv("{call EMPLOYEE_COUNT(0, OUT)}", call.getInt(2));
+            } catch (SQLException e) {
+                throw new IllegalStateException(e);
+            }
+            Out.note("wmstdappdbimpl (QueryProcedureTester) tests stored procedures through this connection.");
+
+            Out.row("30", "Session.doWork(connection -> ...) — the public way to reach the JDBC Connection");
+            session.doWork(conn -> {
+                Out.kv("connection.getMetaData().getDatabaseProductName()", conn.getMetaData().getDatabaseProductName());
+                try (CallableStatement call = conn.prepareCall("{call EMPLOYEE_COUNT(?, ?)}")) {
+                    call.setInt(1, 1);
+                    call.registerOutParameter(2, Types.INTEGER);
+                    call.execute();
+                    Out.kv("{call EMPLOYEE_COUNT(1, OUT)}", call.getInt(2));
+                }
+            });
+            Integer viaReturningWork = session.doReturningWork(conn -> conn.getTransactionIsolation());
+            Out.kv("doReturningWork(getTransactionIsolation)", viaReturningWork);
+        }
+    }
+
+    /** Rows 36, 37 — the exception hierarchy a failing query surfaces as. */
+    static void exceptions(SessionFactory sessionFactory) {
+        try (Session session = sessionFactory.openSession()) {
+            Out.row("36/37", "Query.list() on a missing table -> PersistenceException wrapping a HibernateException");
+            Out.line("(the WARN/ERROR SqlExceptionHelper lines are Hibernate logging the failure — expected)");
+            try {
+                session.createNativeQuery("SELECT * FROM NO_SUCH_TABLE").list();
+            } catch (PersistenceException e) {
+                Out.kv("caught (catch PersistenceException)", e.getClass().getName());
+                Out.kv("e instanceof HibernateException", e instanceof HibernateException);
+                Out.kv("e.getCause() instanceof HibernateException", e.getCause() instanceof HibernateException);
+                printChainAndHierarchy(e);
+                Out.note("Query/Session JPA-style methods convert HibernateException into a plain "
+                    + "PersistenceException, so 'catch (HibernateException)' would NOT catch this one.");
+            }
+
+            Out.row("37", "session.doWork(..) failing -> HibernateException (JDBCException) thrown directly");
+            try {
+                session.doWork(conn -> conn.createStatement().executeQuery("SELECT * FROM NO_SUCH_TABLE"));
+            } catch (HibernateException e) {
+                Out.kv("caught (catch HibernateException)", e.getClass().getName());
+                Out.kv("e instanceof PersistenceException", e instanceof PersistenceException);
+                printChainAndHierarchy(e);
+            }
+        }
+    }
+
+    private static void printChainAndHierarchy(Throwable e) {
+        Out.line("cause chain:");
+        Throwable firstHibernate = null;
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            Out.line("  " + t.getClass().getName() + ": " + t.getMessage());
+            if (firstHibernate == null && t instanceof HibernateException) {
+                firstHibernate = t;
+            }
+        }
+        if (firstHibernate != null) {
+            Out.line("class hierarchy of " + firstHibernate.getClass().getSimpleName() + ":");
+            for (Class<?> c = firstHibernate.getClass(); c != RuntimeException.class; c = c.getSuperclass()) {
+                Out.line("  " + c.getName());
+            }
+        }
+    }
+}
