@@ -2,6 +2,7 @@ package h5.concepts;
 
 import java.util.Properties;
 
+import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.internal.MetadataImpl;
@@ -75,7 +76,13 @@ public class BootstrapMain {
 
         Out.row("6", "org.hibernate.boot.internal.MetadataImpl — cast to the internal impl (as wmstdappdbimpl does)");
         MetadataImpl metadataImpl = (MetadataImpl) metadata;
-        metadata.getSessionFactoryBuilder().build();
+        try {
+            metadata.getSessionFactoryBuilder().build();
+        } catch (HibernateException e) {
+            Out.kv("getSessionFactoryBuilder().build()", e.getClass().getName() + ": " + e.getMessage());
+            Out.note("Expected: reverse-engineered Metadata names entity classes (com.demo.hr.*Entity) that were never "
+                + "generated or compiled, so no SessionFactory can be built from it.");
+        }
         Out.kv("metadataImpl.getTypeConfiguration()", Out.simpleName(metadataImpl.getTypeConfiguration()));
 
         Out.row("7", "org.hibernate.boot.spi.BootstrapContext — metadataImpl.getBootstrapContext()");
