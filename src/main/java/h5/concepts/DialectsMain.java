@@ -7,7 +7,6 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.dialect.DB2Dialect;
-import org.hibernate.dialect.DatabaseVersion;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.HANADialect;
 import org.hibernate.dialect.HSQLDialect;
@@ -50,12 +49,12 @@ public class DialectsMain {
         Out.row("22–28", "Concrete dialects: openQuote()/closeQuote(), superclass, @Deprecated");
         List<Dialect> dialects = new ArrayList<>();
         dialects.add(new DB2Dialect());                   // 22
-        dialects.add(new HANADialect(DatabaseVersion.make(4)));       // 23  was HANACloudColumnStoreDialect
+        dialects.add(new HANADialect());                  // 23  was HANACloudColumnStoreDialect
         dialects.add(new HSQLDialect());                  // 24
         dialects.add(new MySQLDialect());                 // 25
         dialects.add(new OracleDialect());                // 26  (deprecated in 5.x, the version-aware dialect in 6)
         dialects.add(new PostgreSQLDialect());            // 27  (deprecated in 5.x, the version-aware dialect in 6)
-        dialects.add(new SQLServerDialect(DatabaseVersion.make(11)));  // 28  was SQLServer2012Dialect
+        dialects.add(new SQLServerDialect());             // 28  was SQLServer2012Dialect
         for (Dialect dialect : dialects) {
             Class<?> type = dialect.getClass();
             System.out.printf("    %-30s quotes=%s%s  extends %-34s deprecated=%-5s identity=%-5s version=%s%n",
@@ -69,8 +68,9 @@ public class DialectsMain {
         }
         Out.note("CHANGED in 6: one version-aware dialect per DB replaces 5.x's versioned classes (Oracle12cDialect, "
             + "PostgreSQL10Dialect, ...); OracleDialect / PostgreSQLDialect are no longer deprecated and now extend Dialect. "
-            + "HANACloudColumnStoreDialect is deprecated for removal -> HANADialect(DatabaseVersion.make(4)); "
-            + "SQLServer2012Dialect is deprecated -> SQLServerDialect(DatabaseVersion.make(11)).");
+            + "REMOVED in 7: HANACloudColumnStoreDialect -> HANADialect and SQLServer2012Dialect -> SQLServerDialect "
+            + "(deprecated in 6; not in hibernate-community-dialects either). In 7 their no-arg constructors assume a newer "
+            + "minimum version (HANA 2.0.50, SQL Server 12) than the 6.x replacements HANADialect(4) / SQLServerDialect(11) used.");
     }
 
     /**

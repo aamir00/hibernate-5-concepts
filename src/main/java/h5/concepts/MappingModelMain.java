@@ -16,6 +16,7 @@ import org.hibernate.mapping.SimpleValue;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.UniqueKey;
 import org.hibernate.mapping.Value;
+import org.hibernate.tool.internal.reveng.util.EnhancedValue;
 import org.hibernate.type.StandardBasicTypes;
 
 import h5.concepts.support.Out;
@@ -78,9 +79,13 @@ public class MappingModelMain {
                 if (value.isSimpleValue()) {
                     SimpleValue simpleValue = (SimpleValue) value;
                     generator = " typeName=" + simpleValue.getTypeName();
-                    if (simpleValue.getIdentifierGeneratorStrategy() != null && table.getPrimaryKey().containsColumn(column)) {
-                        generator += " idGenerator=" + simpleValue.getIdentifierGeneratorStrategy()
-                            + " params=" + simpleValue.getIdentifierGeneratorParameters();
+                    // 7: the generator getters are gone from core's SimpleValue; Tools' reverse-engineered values keep them.
+                    if (value instanceof EnhancedValue enhancedValue && enhancedValue.getIdentifierGeneratorStrategy() != null
+                            && table.getPrimaryKey().containsColumn(column)) {
+                        generator += " idGenerator=" + enhancedValue.getIdentifierGeneratorStrategy()
+                            + " params=" + enhancedValue.getIdentifierGeneratorProperties();
+                    } else if (table.getPrimaryKey().containsColumn(column)) {
+                        generator += " (id value " + value.getClass().getSimpleName() + ": no generator getters in 7)";
                     }
                 }
                 // wmstdappdbimpl (HibernateColumnMetaProvider) reads the no-arg getSqlType()/getSqlTypeCode(), which the
@@ -92,8 +97,9 @@ public class MappingModelMain {
             }
             Out.note("For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC "
                 + "type. CHANGED in 6: getSqlType(Dialect, Mapping) was removed -> getSqlType(Metadata); "
-                + "getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2); "
-                + "SimpleValue.getIdentifierGeneratorProperties() is deprecated -> getIdentifierGeneratorParameters() (a Map).");
+                + "getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2). "
+                + "REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties()/Parameters(); "
+                + "reverse-engineered values implement Tools' EnhancedValue, which still has the strategy and properties.");
 
             Out.row("15", "PrimaryKey via table.getPrimaryKey().getColumns()");
             PrimaryKey primaryKey = table.getPrimaryKey();
@@ -110,8 +116,8 @@ public class MappingModelMain {
                 Out.kv(uniqueKey.getName(), columnNames(uniqueKey.getColumns()));
             }
 
-            Out.row("17", "ForeignKey via table.getForeignKeys().values()");
-            Collection<ForeignKey> foreignKeys = table.getForeignKeys().values();
+            Out.row("17", "ForeignKey via table.getForeignKeyCollection()");
+            Collection<ForeignKey> foreignKeys = table.getForeignKeyCollection();
             if (foreignKeys.isEmpty()) {
                 Out.line("(none)");
             }
@@ -125,7 +131,8 @@ public class MappingModelMain {
             }
         }
         Out.note("CHANGED in 6: Table.getColumnIterator() and Constraint.getColumnIterator() were removed -> getColumns(); "
-            + "getUniqueKeyIterator()/getForeignKeyIterator() are deprecated for removal -> getUniqueKeys()/getForeignKeys().values().");
+            + "getUniqueKeyIterator()/getForeignKeyIterator() -> getUniqueKeys().values() / getForeignKeys().values(). "
+            + "CHANGED in 7: the two iterators are removed and getForeignKeys() is deprecated for removal -> getForeignKeyCollection().");
     }
 
     static void basicTypes() {

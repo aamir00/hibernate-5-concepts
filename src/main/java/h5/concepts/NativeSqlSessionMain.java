@@ -22,7 +22,7 @@ import org.hibernate.Transaction;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.internal.AbstractScrollableResults;
+import org.hibernate.internal.scrollable.AbstractScrollableResults;
 import org.hibernate.internal.SessionImpl;
 import org.hibernate.query.Query;
 
@@ -103,11 +103,13 @@ public class NativeSqlSessionMain {
                 Out.kv("scroll class", Out.simpleName(scroll));
                 while (scroll.next()) {
                     Object[] row = scroll.get(); // typed ScrollableResults<Object[]> in 6 (raw Object[] in 5.x)
-                    Out.line("  row " + scroll.getRowNumber() + ": " + row[0] + " " + row[1] + " " + row[2]);
+                    Out.line("  position " + scroll.getPosition() + ": " + row[0] + " " + row[1] + " " + row[2]);
                 }
             } finally {
                 scroll.close();
             }
+            Out.note("CHANGED in 7: getRowNumber() (0-based) is deprecated for removal -> getPosition() (1-based); "
+                + "ScrollableResults is AutoCloseable but no longer Closeable.");
 
             Out.row("35", "AbstractScrollableResults.getResultSet() — REMOVED in 6");
             try (ScrollableResults<Object[]> metaScroll = query.scroll(ScrollMode.FORWARD_ONLY)) {
@@ -117,6 +119,7 @@ public class NativeSqlSessionMain {
             Out.note("REMOVED in 6: the protected getResultSet() is gone, so the reflective call wmstdappdbimpl "
                 + "(QueryProcedureTester) uses to read the result columns' metadata no longer works. Also, query.scroll() "
                 + "without a ScrollMode now throws AssertionFailure while JDBC metadata access is off (FORWARD_ONLY works).");
+            Out.kv("AbstractScrollableResults package (moved in 7)", AbstractScrollableResults.class.getPackageName());
             Out.line("Supported replacement — run the SQL on the Session's connection and read ResultSetMetaData:");
             session.doWork(connection -> {
                 try (PreparedStatement statement = connection.prepareStatement(sql);

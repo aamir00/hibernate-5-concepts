@@ -80,7 +80,7 @@ public class ExporterMain {
         Out.note("CHANGED in 6: POJOClass.getQualifiedDeclarationName() repeats the package (com.demo.hr.com.demo.hr.X). "
             + "Tools 5.6 had an inverted check that returned the already-qualified class name; Tools 6 fixed the check and "
             + "now prefixes the package to that qualified name. getPackageName() + \".\" + getShortName() is the safe form. "
-            + "A DATE column now maps to java.sql.Date in generated code (5.x: java.util.Date).");
+            + "A DATE column maps to java.util.Date in generated code, as in 5.x (Tools 6.6 generated java.sql.Date).");
 
         Out.row("58", "org.hibernate.tool.hbm2x.ant.ConfigurationTask");
         Out.line("Only a stale Javadoc @see in wmstdappdbimpl's ConfigurationBuilder; the class is not in Tools 5.6.15 (nor 6.6). Nothing to run.");

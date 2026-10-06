@@ -185,6 +185,9 @@ public class MetaDataDialectMain {
             JDBCException converted = converter.convert(new SQLException(sample[1], sample[0]), "demo", "SELECT 1");
             Out.kv("SQLState " + sample[0] + " (" + sample[1] + ")", converted.getClass().getSimpleName());
         }
+        Out.note("CHANGED in 7: SQLState 42501 (SQL standard: insufficient privilege) maps to the new AuthException "
+            + "(6.x: SQLGrammarException). HSQLDB reports a missing table as 42501, but queries through a Session still get "
+            + "SQLGrammarException because HSQLDialect's own conversion (by error code) runs first.");
     }
 
     private static void print(Iterator<Map<String, Object>> rows, RevengDialect dialect, String... keys) {

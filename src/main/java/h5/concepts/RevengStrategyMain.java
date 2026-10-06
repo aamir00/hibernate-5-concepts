@@ -174,7 +174,7 @@ public class RevengStrategyMain {
             Out.row("41", "strategy.isOneToOne(ForeignKey) on the reverse-engineered foreign keys");
             RevengStrategy strategy = RevengSupport.strategy();
             for (PersistentClass pc : metadata.getEntityBindings()) {
-                for (ForeignKey fk : pc.getTable().getForeignKeys().values()) {
+                for (ForeignKey fk : pc.getTable().getForeignKeyCollection()) {
                     Out.kv(fk.getName() + " isOneToOne", strategy.isOneToOne(fk));
                 }
             }
