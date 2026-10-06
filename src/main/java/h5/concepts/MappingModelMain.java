@@ -1,6 +1,6 @@
 package h5.concepts;
 
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 
 import org.hibernate.boot.Metadata;
@@ -8,8 +8,6 @@ import org.hibernate.boot.internal.MetadataImpl;
 import org.hibernate.boot.model.naming.Identifier;
 import org.hibernate.boot.model.relational.QualifiedNameImpl;
 import org.hibernate.boot.registry.internal.StandardServiceRegistryImpl;
-import org.hibernate.dialect.Dialect;
-import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.ForeignKey;
 import org.hibernate.mapping.PersistentClass;
@@ -28,7 +26,8 @@ import h5.concepts.support.RevengSupport;
  * <p>
  * The demo HR schema is reverse engineered into a {@link Metadata}, and then each {@link PersistentClass} is
  * walked the way wmstdappdbimpl's {@code DataModelExporter} / {@code RelationsMapper} /
- * {@code HibernateColumnMetaProvider} do (raw iterators, casts, generator strategy and properties).
+ * {@code HibernateColumnMetaProvider} do (columns, keys, generator strategy and parameters). On 6.6 the 5.x
+ * iterator getters are replaced by collection getters.
  */
 public class MappingModelMain {
 
@@ -60,11 +59,7 @@ public class MappingModelMain {
         Out.note("wmstdappdbimpl (WMMySQLMetaDataDialect) builds one only to put a readable table name in error messages.");
     }
 
-    @SuppressWarnings("rawtypes")
     static void mappingModel(Metadata metadata) {
-        Dialect dialect = ((MetadataImpl) metadata).getBootstrapContext().getServiceRegistry()
-            .getService(JdbcEnvironment.class).getDialect();
-
         for (PersistentClass persistentClass : metadata.getEntityBindings()) {
             Out.row("10", "PersistentClass  " + persistentClass.getEntityName());
             Out.kv("getClassName()", persistentClass.getClassName());
@@ -76,10 +71,8 @@ public class MappingModelMain {
             Out.kv("getSchema() / getCatalog()", table.getSchema() + " / " + table.getCatalog());
             Out.kv("getQualifiedTableName()", table.getQualifiedTableName());
 
-            Out.row("12/13/14", "Column / Value / SimpleValue via table.getColumnIterator()");
-            Iterator columnIterator = table.getColumnIterator();
-            while (columnIterator.hasNext()) {
-                Column column = (Column) columnIterator.next();
+            Out.row("12/13/14", "Column / Value / SimpleValue via table.getColumns()");
+            for (Column column : table.getColumns()) {
                 Value value = column.getValue();
                 String generator = "";
                 if (value.isSimpleValue()) {
@@ -87,50 +80,52 @@ public class MappingModelMain {
                     generator = " typeName=" + simpleValue.getTypeName();
                     if (simpleValue.getIdentifierGeneratorStrategy() != null && table.getPrimaryKey().containsColumn(column)) {
                         generator += " idGenerator=" + simpleValue.getIdentifierGeneratorStrategy()
-                            + " params=" + simpleValue.getIdentifierGeneratorProperties();
+                            + " params=" + simpleValue.getIdentifierGeneratorParameters();
                     }
                 }
                 // wmstdappdbimpl (HibernateColumnMetaProvider) reads the no-arg getSqlType()/getSqlTypeCode(), which the
-                // Tools JDBC binder fills from DatabaseMetaData; the (Dialect, Mapping) forms resolve via the dialect.
-                System.out.printf("    %-11s getSqlType()=%-10s getSqlTypeCode()=%-5s getSqlType(d,m)=%-14s len=%-6d prec=%-3d scale=%-2d nullable=%-5s unique=%-5s%s%n",
-                    column.getName(), column.getSqlType(), column.getSqlTypeCode(), column.getSqlType(dialect, metadata),
+                // Tools JDBC binder fills from DatabaseMetaData; getSqlType(Metadata) resolves the DDL type via the dialect.
+                System.out.printf("    %-11s getSqlType()=%-10s getSqlTypeCode()=%-5s getSqlType(md)=%-14s len=%-6s prec=%-4s scale=%-4s nullable=%-5s unique=%-5s%s%n",
+                    column.getName(), column.getSqlType(), column.getSqlTypeCode(), column.getSqlType(metadata),
                     column.getLength(), column.getPrecision(), column.getScale(),
                     column.isNullable(), column.isUnique(), generator);
             }
             Out.note("For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC "
-                + "type. getLength()/getPrecision()/getScale() are int in 5.x; unset ones show the defaults 255/19/2.");
+                + "type. CHANGED in 6: getSqlType(Dialect, Mapping) was removed -> getSqlType(Metadata); "
+                + "getLength()/getPrecision()/getScale() are Long/Integer/Integer and null when unset (5.x: int, defaults 255/19/2); "
+                + "SimpleValue.getIdentifierGeneratorProperties() is deprecated -> getIdentifierGeneratorParameters() (a Map).");
 
-            Out.row("15", "PrimaryKey via table.getPrimaryKey().getColumnIterator()");
+            Out.row("15", "PrimaryKey via table.getPrimaryKey().getColumns()");
             PrimaryKey primaryKey = table.getPrimaryKey();
             if (primaryKey != null) {
-                Out.kv(primaryKey.getName(), columnNames(primaryKey.getColumnIterator()));
+                Out.kv(primaryKey.getName(), columnNames(primaryKey.getColumns()));
             }
 
-            Out.row("16", "UniqueKey via table.getUniqueKeyIterator()");
-            Iterator<UniqueKey> uniqueKeys = table.getUniqueKeyIterator();
-            if (!uniqueKeys.hasNext()) {
+            Out.row("16", "UniqueKey via table.getUniqueKeys().values()");
+            Collection<UniqueKey> uniqueKeys = table.getUniqueKeys().values();
+            if (uniqueKeys.isEmpty()) {
                 Out.line("(none)");
             }
-            while (uniqueKeys.hasNext()) {
-                UniqueKey uniqueKey = uniqueKeys.next();
-                Out.kv(uniqueKey.getName(), columnNames(uniqueKey.getColumnIterator()));
+            for (UniqueKey uniqueKey : uniqueKeys) {
+                Out.kv(uniqueKey.getName(), columnNames(uniqueKey.getColumns()));
             }
 
-            Out.row("17", "ForeignKey via table.getForeignKeyIterator()");
-            Iterator<ForeignKey> foreignKeys = table.getForeignKeyIterator();
-            if (!foreignKeys.hasNext()) {
+            Out.row("17", "ForeignKey via table.getForeignKeys().values()");
+            Collection<ForeignKey> foreignKeys = table.getForeignKeys().values();
+            if (foreignKeys.isEmpty()) {
                 Out.line("(none)");
             }
-            while (foreignKeys.hasNext()) {
-                ForeignKey foreignKey = foreignKeys.next();
-                List referenced = foreignKey.getReferencedColumns(); // raw List in 5.x
+            for (ForeignKey foreignKey : foreignKeys) {
+                List<Column> referenced = foreignKey.getReferencedColumns(); // typed List<Column> in 6 (raw in 5.x)
                 String target = referenced.isEmpty()
                     ? "(PK of referenced table)"
-                    : ((Column) referenced.get(0)).getName() + (referenced.size() > 1 ? ",..." : "");
-                Out.kv(foreignKey.getName(), columnNames(foreignKey.getColumnIterator()) + " -> "
+                    : referenced.get(0).getName() + (referenced.size() > 1 ? ",..." : "");
+                Out.kv(foreignKey.getName(), columnNames(foreignKey.getColumns()) + " -> "
                     + foreignKey.getReferencedTable().getName() + "." + target);
             }
         }
+        Out.note("CHANGED in 6: Table.getColumnIterator() and Constraint.getColumnIterator() were removed -> getColumns(); "
+            + "getUniqueKeyIterator()/getForeignKeyIterator() are deprecated for removal -> getUniqueKeys()/getForeignKeys().values().");
     }
 
     static void basicTypes() {
@@ -139,14 +134,16 @@ public class MappingModelMain {
         Out.kv("TEXT.getName()", StandardBasicTypes.TEXT.getName());
         Out.kv("INTEGER.getName()", StandardBasicTypes.INTEGER.getName());
         Out.kv("BIG_DECIMAL.getName()", StandardBasicTypes.BIG_DECIMAL.getName());
-        Out.kv("STRING class (a Type instance in 5.x)", Out.simpleName(StandardBasicTypes.STRING));
+        Out.kv("STRING class (a BasicTypeReference in 6)", Out.simpleName(StandardBasicTypes.STRING));
+        Out.note("CHANGED in 6: the constants are BasicTypeReference<T> (5.x: Type instances such as StringType); "
+            + "getName() returns the same names.");
         Out.line("The reveng.xml used by RevengSupport maps VARCHAR(1000) -> \"" + StandardBasicTypes.TEXT.getName()
             + "\", so EMPLOYEE_DETAIL.BIO above shows typeName=text instead of string (no override touches EMPLOYEE.NOTES, so the CLOB stays clob).");
     }
 
-    private static String columnNames(Iterator<Column> columns) {
+    private static String columnNames(List<Column> columns) {
         StringBuilder sb = new StringBuilder("(");
-        columns.forEachRemaining(c -> sb.append(sb.length() > 1 ? ", " : "").append(c.getName()));
+        columns.forEach(c -> sb.append(sb.length() > 1 ? ", " : "").append(c.getName()));
         return sb.append(")").toString();
     }
 }

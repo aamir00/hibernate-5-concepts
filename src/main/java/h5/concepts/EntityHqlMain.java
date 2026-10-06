@@ -29,10 +29,10 @@ import h5.concepts.support.Out;
 public class EntityHqlMain {
 
     public static void main(String[] args) {
-        Out.banner("EntityHqlMain — @Entity + HQL: FetchType LAZY/EAGER, @Cascade SAVE_UPDATE/REMOVE");
+        Out.banner("EntityHqlMain — @Entity + HQL: FetchType LAZY/EAGER, @Cascade PERSIST/MERGE/REMOVE");
         try (SessionFactory sessionFactory = createSessionFactory()) {
-            Integer engineeringId = cascadeSaveUpdate(sessionFactory);
-            cascadeOnPersistFlush(sessionFactory);
+            Integer engineeringId = cascadePersist(sessionFactory);
+            cascadeMerge(sessionFactory);
             fetchTypes(sessionFactory, engineeringId);
             hql(sessionFactory);
             cascadeRemove(sessionFactory, engineeringId);
@@ -58,35 +58,42 @@ public class EntityHqlMain {
         return sessionFactory;
     }
 
-    /** Row 20: SAVE_UPDATE — saveOrUpdate(department) also inserts the new employees in its collection. */
-    static Integer cascadeSaveUpdate(SessionFactory sessionFactory) {
-        Out.row("20", "@Cascade(SAVE_UPDATE) — session.saveOrUpdate(dept) cascades to new employees");
+    /** Row 20: PERSIST — persist(department) also inserts the new employees in its collection. */
+    static Integer cascadePersist(SessionFactory sessionFactory) {
+        Out.row("20", "@Cascade(PERSIST) — session.persist(dept) cascades to new employees");
         try (Session session = sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
             Department engineering = new Department("Engineering");
             engineering.addEmployee("Ada", 9100);
             engineering.addEmployee("Alan", 9500);
             engineering.addEmployee("Grace", 8700);
-            session.saveOrUpdate(engineering);
+            session.persist(engineering);
             tx.commit();
             Out.kv("employees saved through the cascade", countEmployees(session));
+            Out.note("CHANGED in 6: session.saveOrUpdate() and CascadeType.SAVE_UPDATE are deprecated -> persist() (new) / "
+                + "merge() (detached) with the PERSIST + MERGE cascades.");
             return engineering.getId();
         }
     }
 
-    /** Row 20: with the native bootstrap, SAVE_UPDATE is also applied when a persist()-ed entity is flushed. */
-    static void cascadeOnPersistFlush(SessionFactory sessionFactory) {
-        Out.row("20", "@Cascade(SAVE_UPDATE) + session.persist(dept) — cascade happens at flush");
+    /** Row 20: MERGE — merging a detached department also inserts an employee added while it was detached. */
+    static void cascadeMerge(SessionFactory sessionFactory) {
+        Out.row("20", "@Cascade(MERGE) — session.merge(detached dept) cascades to a new employee");
+        Department sales = new Department("Sales");
+        try (Session session = sessionFactory.openSession()) {
+            Transaction tx = session.beginTransaction();
+            session.persist(sales);
+            tx.commit();
+        }
+        sales.addEmployee("Linus", 7000); // sales is detached now
         try (Session session = sessionFactory.openSession()) {
             long before = countEmployees(session);
             Transaction tx = session.beginTransaction();
-            Department sales = new Department("Sales");
-            sales.addEmployee("Linus", 7000);
-            session.persist(sales);
+            session.merge(sales);
             tx.commit();
-            Out.kv("employees before / after persist(sales)", before + " / " + countEmployees(session));
-            Out.note("The new employee was inserted too: with the native Configuration bootstrap, Hibernate 5's "
-                + "flush-time cascade honours SAVE_UPDATE even for persist(). (SAVE_UPDATE is deprecated in 6 and removed in 7.)");
+            Out.kv("employees before / after merge(sales)", before + " / " + countEmployees(session));
+            Out.note("The new employee was inserted by the MERGE cascade. On 5.x this was saveOrUpdate() + SAVE_UPDATE "
+                + "(which, with the native bootstrap, also cascaded for persist() at flush).");
         }
     }
 
@@ -151,19 +158,20 @@ public class EntityHqlMain {
 
             Out.row("32/33", "HQL bulk update — executeUpdate() inside a transaction, then rollback");
             Transaction tx = session.beginTransaction();
-            int updated = session.createQuery("update Employee e set e.salary = e.salary + 100").executeUpdate();
+            int updated = session.createMutationQuery("update Employee e set e.salary = e.salary + 100").executeUpdate();
             Out.kv("executeUpdate() rows", updated);
+            Out.note("CHANGED in 6: untyped createQuery(String) is deprecated -> createMutationQuery(String) for update/delete.");
             tx.rollback();
         }
     }
 
     /** Row 20: REMOVE — deleting the department deletes its employees. */
     static void cascadeRemove(SessionFactory sessionFactory, Integer departmentId) {
-        Out.row("20", "@Cascade(REMOVE) — session.delete(dept) also deletes its employees");
+        Out.row("20", "@Cascade(REMOVE) — session.remove(dept) also deletes its employees");
         try (Session session = sessionFactory.openSession()) {
             long before = countEmployees(session);
             Transaction tx = session.beginTransaction();
-            session.delete(session.get(Department.class, departmentId));
+            session.remove(session.get(Department.class, departmentId)); // CHANGED in 6: delete() is deprecated -> remove()
             tx.commit();
             Out.kv("employees before / after delete", before + " / " + countEmployees(session));
         }

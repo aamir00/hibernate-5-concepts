@@ -127,7 +127,8 @@ public final class DemoDatabase {
         props.setProperty("hibernate.show_sql", "false");
         props.setProperty("hibernate.globally_quoted_identifiers", "false");
         props.setProperty("hibernate.hbm2ddl.auto", "none");
-        props.setProperty("hibernate.temp.use_jdbc_metadata_defaults", "false");
+        // 6.5+ name of the 5.x "hibernate.temp.use_jdbc_metadata_defaults" (the old key still works but is deprecated).
+        props.setProperty("hibernate.boot.allow_jdbc_metadata_access", "false");
         props.setProperty("hibernate.connection.autocommit", "true");
         return props;
     }

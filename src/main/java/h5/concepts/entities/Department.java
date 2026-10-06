@@ -14,9 +14,10 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 
 /**
- * Rows 19, 20. The collection side uses {@code FetchType.LAZY} and Hibernate's own {@code @Cascade}
- * with {@code SAVE_UPDATE} + {@code REMOVE}, the two cascade types wmstdappdbimpl's code generator
- * ({@code RelationProperty}) writes into generated entities.
+ * Rows 19, 20. The collection side uses {@code FetchType.LAZY} and Hibernate's own {@code @Cascade}.
+ * wmstdappdbimpl's code generator ({@code RelationProperty}) writes {@code SAVE_UPDATE} + {@code REMOVE} into
+ * generated entities on 5.x. {@code SAVE_UPDATE} is deprecated in 6 (it belonged to the deprecated
+ * {@code saveOrUpdate()}); its replacement is {@code PERSIST} + {@code MERGE}, which is what is used here.
  */
 @Entity
 public class Department {
@@ -28,7 +29,7 @@ public class Department {
     private String name;
 
     @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
-    @Cascade({CascadeType.SAVE_UPDATE, CascadeType.REMOVE})
+    @Cascade({CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
     private List<Employee> employees = new ArrayList<>();
 
     protected Department() {

@@ -17,7 +17,7 @@ public class RunAllMain {
     }
 
     public static void main(String[] args) {
-        Out.banner("RunAllMain — every Hibernate 5.6.15 concept used by wmstdappdbimpl");
+        Out.banner("RunAllMain — every Hibernate concept used by wmstdappdbimpl, on Hibernate 6.6.58");
         Map<String, Demo> demos = new LinkedHashMap<>();
         demos.put("BootstrapMain        rows 1-7", BootstrapMain::main);
         demos.put("MappingModelMain     rows 8-18", MappingModelMain::main);
