@@ -7,8 +7,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
-import org.hibernate.tool.internal.reveng.dialect.JDBCMetaDataDialect;
-import org.hibernate.tool.internal.reveng.dialect.ResultSetIterator;
+import org.hibernate.tool.reveng.internal.core.dialect.JDBCMetaDataDialect;
+import org.hibernate.tool.reveng.internal.core.dialect.ResultSetIterator;
 
 /**
  * [Rows 38, 48, 49, 50, 52] A custom Tools metadata dialect, the way wmstdappdbimpl's

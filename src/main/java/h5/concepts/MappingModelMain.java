@@ -16,7 +16,7 @@ import org.hibernate.mapping.SimpleValue;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.UniqueKey;
 import org.hibernate.mapping.Value;
-import org.hibernate.tool.internal.reveng.util.EnhancedValue;
+import org.hibernate.tool.reveng.internal.core.util.EnhancedValue;
 import org.hibernate.type.StandardBasicTypes;
 
 import h5.concepts.support.Out;
@@ -99,7 +99,7 @@ public class MappingModelMain {
                 + "getLength()/getPrecision()/getScale() int -> Long/Integer/Integer, unset ones are null instead of 255/19/2 (6.0).");
             Out.note("REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties() (7.0, no core "
                 + "boot-model equivalent) -> read them from the entity's identifier (PersistentClass.getIdentifier()), which for "
-                + "reverse-engineered metadata is Tools' EnhancedBasicValue implementing org.hibernate.tool.internal.reveng.util.EnhancedValue. "
+                + "reverse-engineered metadata is Tools' EnhancedBasicValue implementing org.hibernate.tool.reveng.internal.core.util.EnhancedValue. "
                 + "(Column.getValue() of a PK column that is also a one-to-one FK is the OneToOne, which never carries a generator in 7.)");
 
             Out.row("15", "PrimaryKey via table.getPrimaryKey().getColumns()");

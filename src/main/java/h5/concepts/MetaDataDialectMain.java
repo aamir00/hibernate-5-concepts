@@ -18,12 +18,12 @@ import org.hibernate.dialect.OracleDialect;
 import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.engine.jdbc.spi.JdbcServices;
 import org.hibernate.exception.spi.SQLExceptionConverter;
-import org.hibernate.tool.api.reveng.RevengDialect;
-import org.hibernate.tool.api.reveng.RevengDialectFactory;
-import org.hibernate.tool.internal.reveng.dialect.AbstractMetaDataDialect;
-import org.hibernate.tool.internal.reveng.dialect.JDBCMetaDataDialect;
-import org.hibernate.tool.internal.reveng.dialect.MySQLMetaDataDialect;
-import org.hibernate.tool.internal.reveng.dialect.ResultSetIterator;
+import org.hibernate.tool.reveng.api.core.RevengDialect;
+import org.hibernate.tool.reveng.api.core.RevengDialectFactory;
+import org.hibernate.tool.reveng.internal.core.dialect.AbstractMetaDataDialect;
+import org.hibernate.tool.reveng.internal.core.dialect.JDBCMetaDataDialect;
+import org.hibernate.tool.reveng.internal.core.dialect.MySQLMetaDataDialect;
+import org.hibernate.tool.reveng.internal.core.dialect.ResultSetIterator;
 
 import h5.concepts.support.DemoDatabase;
 import h5.concepts.support.DemoMetaDataDialect;
@@ -72,8 +72,8 @@ public class MetaDataDialectMain {
         Properties withProperty = RevengSupport.properties(DemoMetaDataDialect.class);
         Out.kv("HSQLDialect, property = DemoMetaDataDialect",
             Out.simpleName(RevengDialectFactory.createMetaDataDialect(new HSQLDialect(), withProperty)));
-        Out.note("CHANGED in 7: org.hibernate.cfg.MetaDataDialectFactory -> org.hibernate.tool.api.reveng.RevengDialectFactory; "
-            + "org.hibernate.cfg.reveng.dialect.MetaDataDialect -> org.hibernate.tool.api.reveng.RevengDialect; "
+        Out.note("CHANGED in 7: org.hibernate.cfg.MetaDataDialectFactory -> org.hibernate.tool.reveng.api.core.RevengDialectFactory; "
+            + "org.hibernate.cfg.reveng.dialect.MetaDataDialect -> org.hibernate.tool.reveng.api.core.RevengDialect; "
             + "configure(ReverseEngineeringRuntimeInfo) -> configure(ConnectionProvider) (runtime-info class removed). "
             + "HSQLDialect now gets its own HSQLMetaDataDialect.");
     }
@@ -105,7 +105,7 @@ public class MetaDataDialectMain {
                 dialect.needQuote("EMPLOYEE") + " / " + dialect.needQuote("my table"));
             Out.kv("is an AbstractMetaDataDialect", dialect instanceof AbstractMetaDataDialect);
             Out.note("CHANGED in 7: org.hibernate.cfg.reveng.dialect.{Abstract,JDBC}MetaDataDialect -> "
-                + "org.hibernate.tool.internal.reveng.dialect.*; same row maps and keys.");
+                + "org.hibernate.tool.reveng.internal.core.dialect.*; same row maps and keys.");
         } finally {
             dialect.close();
         }
@@ -180,7 +180,7 @@ public class MetaDataDialectMain {
             Out.kv("statement.isClosed() after iterator.close()", statement.isClosed());
         }
         Out.note("CHANGED in 7: org.hibernate.cfg.reveng.dialect.ResultSetIterator(Statement, ResultSet, SQLExceptionConverter) -> "
-            + "org.hibernate.tool.internal.reveng.dialect.ResultSetIterator(Statement, ResultSet); handleSQLException converts itself.");
+            + "org.hibernate.tool.reveng.internal.core.dialect.ResultSetIterator(Statement, ResultSet); handleSQLException converts itself.");
 
         Out.row("38", "SQLExceptionConverter.convert(SQLException, message, sql) — SQLState decides the type");
         Out.kv("converter class", Out.simpleName(converter));

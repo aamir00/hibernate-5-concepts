@@ -10,17 +10,17 @@ import org.hibernate.mapping.ForeignKey;
 import org.hibernate.mapping.PersistentClass;
 import org.hibernate.mapping.Property;
 import org.hibernate.mapping.Table;
-import org.hibernate.tool.api.metadata.MetadataConstants;
-import org.hibernate.tool.api.metadata.MetadataDescriptor;
-import org.hibernate.tool.api.metadata.MetadataDescriptorFactory;
-import org.hibernate.tool.api.reveng.RevengSettings;
-import org.hibernate.tool.api.reveng.RevengStrategy;
-import org.hibernate.tool.api.reveng.TableIdentifier;
-import org.hibernate.tool.internal.reveng.strategy.DefaultStrategy;
-import org.hibernate.tool.internal.reveng.strategy.OverrideRepository;
-import org.hibernate.tool.internal.reveng.strategy.TableFilter;
-import org.hibernate.tool.internal.util.NameConverter;
-import org.hibernate.tool.internal.util.TableNameQualifier;
+import org.hibernate.tool.reveng.api.metadata.MetadataConstants;
+import org.hibernate.tool.reveng.api.metadata.MetadataDescriptor;
+import org.hibernate.tool.reveng.api.metadata.MetadataDescriptorFactory;
+import org.hibernate.tool.reveng.api.core.RevengSettings;
+import org.hibernate.tool.reveng.api.core.RevengStrategy;
+import org.hibernate.tool.reveng.api.core.TableIdentifier;
+import org.hibernate.tool.reveng.internal.core.strategy.DefaultStrategy;
+import org.hibernate.tool.reveng.internal.core.strategy.OverrideRepository;
+import org.hibernate.tool.reveng.internal.core.strategy.TableFilter;
+import org.hibernate.tool.reveng.internal.util.NameConverter;
+import org.hibernate.tool.reveng.internal.util.TableNameQualifier;
 
 import h5.concepts.support.DemoDatabase;
 import h5.concepts.support.DemoMetaDataDialect;
@@ -34,7 +34,9 @@ import h5.concepts.support.RevengSupport;
  * (see {@link RevengSupport}); this Main walks through each piece, then runs the whole thing.
  * <p>
  * Tools 7 moved the 5.6 {@code org.hibernate.cfg.reveng.*} / {@code org.hibernate.tool.util.*} classes to
- * {@code org.hibernate.tool.api.reveng.*} and {@code org.hibernate.tool.internal.*}; each row notes old -> new.
+ * {@code org.hibernate.tool.reveng.api.core.*} and {@code org.hibernate.tool.reveng.internal.*}; each row notes old -> new.
+ * (Packages as of 7.4, where Tools became ORM's {@code hibernate-reveng}; 7.0–7.3 used {@code org.hibernate.tool.api.reveng.*}
+ * and {@code org.hibernate.tool.internal.*}.)
  */
 public class RevengStrategyMain {
 
@@ -59,7 +61,7 @@ public class RevengStrategyMain {
         table.setSchema("PUBLIC");
         Out.kv("TableIdentifier.create(Table)", TableIdentifier.create(table));
         Out.kv("new Table(\"DEPARTMENT\").getName()", new Table("DEPARTMENT").getName());
-        Out.note("CHANGED in 7: org.hibernate.cfg.reveng.TableIdentifier -> org.hibernate.tool.api.reveng.TableIdentifier; "
+        Out.note("CHANGED in 7: org.hibernate.cfg.reveng.TableIdentifier -> org.hibernate.tool.reveng.api.core.TableIdentifier; "
             + "its constructors are private -> TableIdentifier.create(catalog, schema, name) / create(Table).");
         Out.note("CHANGED in 7: core's new Table(String) sets the *contributor* since 6.0, not the name (null above) "
             + "-> new Table(contributor, name).");
@@ -67,7 +69,7 @@ public class RevengStrategyMain {
         Out.row("54", "TableNameQualifier.qualify(catalog, schema, table)");
         Out.kv("qualify(null, \"PUBLIC\", \"EMPLOYEE\")", TableNameQualifier.qualify(null, "PUBLIC", "EMPLOYEE"));
         Out.kv("qualify(\"HR\", \"PUBLIC\", \"EMPLOYEE\")", TableNameQualifier.qualify("HR", "PUBLIC", "EMPLOYEE"));
-        Out.note("CHANGED in 7: org.hibernate.tool.util.TableNameQualifier -> org.hibernate.tool.internal.util.TableNameQualifier.");
+        Out.note("CHANGED in 7: org.hibernate.tool.util.TableNameQualifier -> org.hibernate.tool.reveng.internal.util.TableNameQualifier.");
 
         Out.row("53", "NameConverter (was ReverseEngineeringStrategyUtil) — naming helpers");
         Out.kv("toUpperCamelCase(\"EMPLOYEE_DETAIL\")", NameConverter.toUpperCamelCase("EMPLOYEE_DETAIL"));
@@ -76,7 +78,7 @@ public class RevengStrategyMain {
         Out.kv("simplePluralize(\"address\")", NameConverter.simplePluralize("address"));
         Out.kv("isReservedJavaKeyword(\"class\")", NameConverter.isReservedJavaKeyword("class"));
         Out.note("CHANGED in 7: org.hibernate.cfg.reveng.ReverseEngineeringStrategyUtil -> "
-            + "org.hibernate.tool.internal.util.NameConverter (same static methods).");
+            + "org.hibernate.tool.reveng.internal.util.NameConverter (same static methods).");
     }
 
     static void defaultStrategyAndSettings() {
@@ -93,8 +95,8 @@ public class RevengStrategyMain {
             strategy.columnToHibernateTypeName(detail, "EMP_ID", Types.INTEGER, 0, 10, 0, false, false));
         Out.kv("excludeTable(EMPLOYEE_DETAIL)", strategy.excludeTable(detail));
         Out.kv("getSchemaSelections()", strategy.getSchemaSelections());
-        Out.note("CHANGED in 7: org.hibernate.cfg.reveng.ReverseEngineeringStrategy -> org.hibernate.tool.api.reveng.RevengStrategy, "
-            + "DefaultReverseEngineeringStrategy -> org.hibernate.tool.internal.reveng.strategy.DefaultStrategy (same logic).");
+        Out.note("CHANGED in 7: org.hibernate.cfg.reveng.ReverseEngineeringStrategy -> org.hibernate.tool.reveng.api.core.RevengStrategy, "
+            + "DefaultReverseEngineeringStrategy -> org.hibernate.tool.reveng.internal.core.strategy.DefaultStrategy (same logic).");
 
         Out.row("44", "RevengSettings (was ReverseEngineeringSettings) — package, detect many-to-many / one-to-one / optimistic lock");
         RevengSettings settings = new RevengSettings(strategy)
@@ -108,7 +110,7 @@ public class RevengStrategyMain {
         Out.kv("getDetectOptimsticLock() (sic)", settings.getDetectOptimsticLock());
         Out.kv("tableToClassName(EMPLOYEE_DETAIL) now", strategy.tableToClassName(detail));
         Out.note("wmstdappdbimpl sets the same settings object on both the default (innermost) strategy and the outer one.");
-        Out.note("CHANGED in 7: org.hibernate.cfg.reveng.ReverseEngineeringSettings -> org.hibernate.tool.api.reveng.RevengSettings "
+        Out.note("CHANGED in 7: org.hibernate.cfg.reveng.ReverseEngineeringSettings -> org.hibernate.tool.reveng.api.core.RevengSettings "
             + "(same fluent setters; the getDetectOptimsticLock typo is still there).");
     }
 
@@ -122,7 +124,7 @@ public class RevengStrategyMain {
         Out.kv("exclude(PUBLIC.AUDIT_LOG)", filter.exclude(TableIdentifier.create(null, "PUBLIC", "AUDIT_LOG")));
         Out.kv("exclude(PUBLIC.EMPLOYEE)", filter.exclude(TableIdentifier.create(null, "PUBLIC", "EMPLOYEE"))
             + "   (null = this filter has no opinion)");
-        Out.note("CHANGED in 7: org.hibernate.cfg.reveng.TableFilter -> org.hibernate.tool.internal.reveng.strategy.TableFilter (same code).");
+        Out.note("CHANGED in 7: org.hibernate.cfg.reveng.TableFilter -> org.hibernate.tool.reveng.internal.core.strategy.TableFilter (same code).");
 
         Out.row("45", "OverrideRepository — filters + hibernate.reveng.xml on top of a delegate strategy");
         Out.line("hibernate.reveng.xml used:");
@@ -137,7 +139,7 @@ public class RevengStrategyMain {
                 + "   (default strategy said: string)");
         Out.kv("getSchemaSelections()", overridden.getSchemaSelections().size() + " selection(s), schema "
             + overridden.getSchemaSelections().get(0).getMatchSchema());
-        Out.note("CHANGED in 7: org.hibernate.cfg.reveng.OverrideRepository -> org.hibernate.tool.internal.reveng.strategy.OverrideRepository; "
+        Out.note("CHANGED in 7: org.hibernate.cfg.reveng.OverrideRepository -> org.hibernate.tool.reveng.internal.core.strategy.OverrideRepository; "
             + "addInputStream(..) no longer closes the stream (caller uses try-with-resources); "
             + "new SchemaSelection(catalog, schema) -> RevengStrategy.SchemaSelection is an interface (RevengSupport.schemaSelection).");
     }
@@ -155,7 +157,7 @@ public class RevengStrategyMain {
         Out.kv("excludeTable(AUDIT_LOG) (delegated)", strategy.excludeTable(TableIdentifier.create(null, "PUBLIC", "AUDIT_LOG")));
         Out.line("Chain: " + DemoRevengStrategy.class.getSimpleName() + " -> OverrideRepository strategy -> DefaultStrategy");
         Out.note("CHANGED in 7: org.hibernate.cfg.reveng.DelegatingReverseEngineeringStrategy -> "
-            + "org.hibernate.tool.internal.reveng.strategy.DelegatingStrategy (constructor takes a RevengStrategy).");
+            + "org.hibernate.tool.reveng.internal.core.strategy.DelegatingStrategy (constructor takes a RevengStrategy).");
     }
 
     static void descriptorAndMetadata() {

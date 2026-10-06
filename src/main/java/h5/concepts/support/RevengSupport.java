@@ -8,14 +8,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import org.hibernate.boot.Metadata;
-import org.hibernate.tool.api.metadata.MetadataConstants;
-import org.hibernate.tool.api.metadata.MetadataDescriptor;
-import org.hibernate.tool.api.metadata.MetadataDescriptorFactory;
-import org.hibernate.tool.api.reveng.RevengSettings;
-import org.hibernate.tool.api.reveng.RevengStrategy;
-import org.hibernate.tool.internal.reveng.strategy.DefaultStrategy;
-import org.hibernate.tool.internal.reveng.strategy.OverrideRepository;
-import org.hibernate.tool.internal.reveng.strategy.TableFilter;
+import org.hibernate.tool.reveng.api.metadata.MetadataConstants;
+import org.hibernate.tool.reveng.api.metadata.MetadataDescriptor;
+import org.hibernate.tool.reveng.api.metadata.MetadataDescriptorFactory;
+import org.hibernate.tool.reveng.api.core.RevengSettings;
+import org.hibernate.tool.reveng.api.core.RevengStrategy;
+import org.hibernate.tool.reveng.internal.core.strategy.DefaultStrategy;
+import org.hibernate.tool.reveng.internal.core.strategy.OverrideRepository;
+import org.hibernate.tool.reveng.internal.core.strategy.TableFilter;
 import org.hibernate.type.StandardBasicTypes;
 
 /**
@@ -45,7 +45,7 @@ public final class RevengSupport {
      * The hibernate.reveng.xml content. wmstdappdbimpl's {@code Reveng} writes the same kind of file and uses
      * {@code StandardBasicTypes.X.getName()} for the hibernate-type values (row 18).
      * <p>
-     * The DOCTYPE ({@code hibernate-reverse-engineering-3.0.dtd}) is left out on purpose: Tools (5.6 and 7.3)
+     * The DOCTYPE ({@code hibernate-reverse-engineering-3.0.dtd}) is left out on purpose: Tools (5.6 and 7.4)
      * doesn't bundle the DTD, so the JDK parser would try to download it.
      */
     public static String revengXml() {
