@@ -96,7 +96,8 @@ public class BootstrapMain {
         Out.kv("isActive() before destroy", serviceRegistry.isActive());
         serviceRegistry.destroy();
         Out.kv("isActive() after destroy", serviceRegistry.isActive());
-        Out.note("Tools builds its own registry inside JdbcMetadataDescriptor.createMetadata(); nobody else closes it, "
-            + "so wmstdappdbimpl (DataModelExporter) reaches it through getBootstrapContext() and destroys it.");
+        Out.note("Tools builds its own registry inside MetadataDescriptor.createMetadata() (5.6: JdbcMetadataDescriptor, "
+            + "7: RevengMetadataDescriptor); nobody else closes it, so wmstdappdbimpl (DataModelExporter) reaches it through "
+            + "getBootstrapContext() and destroys it. Unchanged in 7.");
     }
 }

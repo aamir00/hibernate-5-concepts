@@ -2,21 +2,21 @@ package h5.concepts.support;
 
 import java.util.Properties;
 
-import org.hibernate.cfg.reveng.DelegatingReverseEngineeringStrategy;
-import org.hibernate.cfg.reveng.ReverseEngineeringStrategy;
-import org.hibernate.cfg.reveng.ReverseEngineeringStrategyUtil;
-import org.hibernate.cfg.reveng.TableIdentifier;
 import org.hibernate.mapping.ForeignKey;
+import org.hibernate.tool.api.reveng.RevengStrategy;
+import org.hibernate.tool.api.reveng.TableIdentifier;
+import org.hibernate.tool.internal.reveng.strategy.DelegatingStrategy;
+import org.hibernate.tool.internal.util.NameConverter;
 
 /**
- * [Rows 41, 43, 47, 53] A {@link DelegatingReverseEngineeringStrategy}: every method is forwarded to the
- * wrapped delegate, and only the ones below are customised. wmstdappdbimpl's
+ * [Rows 41, 43, 47, 53] A {@link DelegatingStrategy} (5.6: {@code DelegatingReverseEngineeringStrategy}): every
+ * method is forwarded to the wrapped delegate, and only the ones below are customised. wmstdappdbimpl's
  * {@code DefaultRevengNamingStrategy} / {@code MySQLRevengNamingStrategy} etc. follow this pattern and are
- * created through a {@code (ReverseEngineeringStrategy delegate)} constructor.
+ * created through a {@code (ReverseEngineeringStrategy delegate)} constructor ({@link RevengStrategy} in 7).
  */
-public class DemoRevengStrategy extends DelegatingReverseEngineeringStrategy {
+public class DemoRevengStrategy extends DelegatingStrategy {
 
-    public DemoRevengStrategy(ReverseEngineeringStrategy delegate) {
+    public DemoRevengStrategy(RevengStrategy delegate) {
         super(delegate);
     }
 
@@ -33,7 +33,7 @@ public class DemoRevengStrategy extends DelegatingReverseEngineeringStrategy {
             return "rowVersion";
         }
         String name = super.columnToPropertyName(table, columnName);
-        return ReverseEngineeringStrategyUtil.isReservedJavaKeyword(name) ? name + "_" : name;
+        return NameConverter.isReservedJavaKeyword(name) ? name + "_" : name;
     }
 
     /**
@@ -45,7 +45,7 @@ public class DemoRevengStrategy extends DelegatingReverseEngineeringStrategy {
         return super.isOneToOne(foreignKey);
     }
 
-    /** Ends up as {@code SimpleValue.getIdentifierGeneratorStrategy()} on the EMPLOYEE id. */
+    /** Ends up as {@code EnhancedValue.getIdentifierGeneratorStrategy()} on the EMPLOYEE id (SimpleValue in 5.6). */
     @Override
     public String getTableIdentifierStrategyName(TableIdentifier identifier) {
         if ("EMPLOYEE".equalsIgnoreCase(identifier.getName())) {
@@ -54,7 +54,7 @@ public class DemoRevengStrategy extends DelegatingReverseEngineeringStrategy {
         return super.getTableIdentifierStrategyName(identifier);
     }
 
-    /** Ends up as {@code SimpleValue.getIdentifierGeneratorProperties()} on the EMPLOYEE id. */
+    /** Ends up as {@code EnhancedValue.getIdentifierGeneratorProperties()} on the EMPLOYEE id (SimpleValue in 5.6). */
     @Override
     public Properties getTableIdentifierProperties(TableIdentifier identifier) {
         if ("EMPLOYEE".equalsIgnoreCase(identifier.getName())) {

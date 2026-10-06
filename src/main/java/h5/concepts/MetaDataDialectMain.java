@@ -12,19 +12,18 @@ import java.util.Properties;
 import org.hibernate.JDBCException;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.cfg.MetaDataDialectFactory;
-import org.hibernate.cfg.reveng.ReverseEngineeringRuntimeInfo;
-import org.hibernate.cfg.reveng.dialect.AbstractMetaDataDialect;
-import org.hibernate.cfg.reveng.dialect.JDBCMetaDataDialect;
-import org.hibernate.cfg.reveng.dialect.MetaDataDialect;
-import org.hibernate.cfg.reveng.dialect.MySQLMetaDataDialect;
-import org.hibernate.cfg.reveng.dialect.ResultSetIterator;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.dialect.MySQLDialect;
 import org.hibernate.dialect.OracleDialect;
 import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.engine.jdbc.spi.JdbcServices;
 import org.hibernate.exception.spi.SQLExceptionConverter;
+import org.hibernate.tool.api.reveng.RevengDialect;
+import org.hibernate.tool.api.reveng.RevengDialectFactory;
+import org.hibernate.tool.internal.reveng.dialect.AbstractMetaDataDialect;
+import org.hibernate.tool.internal.reveng.dialect.JDBCMetaDataDialect;
+import org.hibernate.tool.internal.reveng.dialect.MySQLMetaDataDialect;
+import org.hibernate.tool.internal.reveng.dialect.ResultSetIterator;
 
 import h5.concepts.support.DemoDatabase;
 import h5.concepts.support.DemoMetaDataDialect;
@@ -37,13 +36,14 @@ import h5.concepts.support.RevengSupport;
  * ({@code WMGenericMetaDataDialect}, {@code WMMySQLMetaDataDialect}, ...) and picks it with the
  * {@code hibernatetool.metadatadialect} property.
  * <p>
- * Normally Tools drives these during {@code createMetadata()}. Here they are configured by hand with a
- * {@link ReverseEngineeringRuntimeInfo}, so each method can be called and its rows printed.
+ * Normally Tools drives these during {@code createMetadata()}. Here they are configured by hand with the
+ * registry's {@link ConnectionProvider} (5.6: a {@code ReverseEngineeringRuntimeInfo}, removed in Tools 6), so each
+ * method can be called and its rows printed. The 5.6 {@code MetaDataDialect} interface is {@link RevengDialect} in 7.
  */
 public class MetaDataDialectMain {
 
     public static void main(String[] args) throws Exception {
-        Out.banner("MetaDataDialectMain — MetaDataDialect, JDBC/MySQL metadata dialects, ResultSetIterator, SQLExceptionConverter");
+        Out.banner("MetaDataDialectMain — RevengDialect, JDBC/MySQL metadata dialects, ResultSetIterator, SQLExceptionConverter");
         DemoDatabase.ensureCreated();
         selection();
 
@@ -53,12 +53,10 @@ public class MetaDataDialectMain {
             ConnectionProvider connectionProvider = registry.getService(ConnectionProvider.class);
             SQLExceptionConverter converter = registry.getService(JdbcServices.class)
                 .getSqlExceptionHelper().getSqlExceptionConverter();
-            ReverseEngineeringRuntimeInfo runtimeInfo =
-                ReverseEngineeringRuntimeInfo.createInstance(connectionProvider, converter, null);
 
-            jdbcMetaDataDialect(runtimeInfo);
-            customDialect(runtimeInfo);
-            mySqlDialect(runtimeInfo);
+            jdbcMetaDataDialect(connectionProvider);
+            customDialect(connectionProvider);
+            mySqlDialect(connectionProvider);
             resultSetIteratorAndConverter(converter);
         } finally {
             StandardServiceRegistryBuilder.destroy(registry);
@@ -66,19 +64,23 @@ public class MetaDataDialectMain {
     }
 
     static void selection() {
-        Out.row("48", "MetaDataDialect selection — property hibernatetool.metadatadialect, else from the SQL Dialect");
+        Out.row("48", "RevengDialect (was MetaDataDialect) selection — property hibernatetool.metadatadialect, else from the SQL Dialect");
         Properties none = new Properties();
-        Out.kv("HSQLDialect, no property", Out.simpleName(MetaDataDialectFactory.createMetaDataDialect(new HSQLDialect(), none)));
-        Out.kv("MySQLDialect, no property", Out.simpleName(MetaDataDialectFactory.createMetaDataDialect(new MySQLDialect(), none)));
-        Out.kv("OracleDialect, no property", Out.simpleName(MetaDataDialectFactory.createMetaDataDialect(new OracleDialect(), none)));
+        Out.kv("HSQLDialect, no property", Out.simpleName(RevengDialectFactory.createMetaDataDialect(new HSQLDialect(), none)));
+        Out.kv("MySQLDialect, no property", Out.simpleName(RevengDialectFactory.createMetaDataDialect(new MySQLDialect(), none)));
+        Out.kv("OracleDialect, no property", Out.simpleName(RevengDialectFactory.createMetaDataDialect(new OracleDialect(), none)));
         Properties withProperty = RevengSupport.properties(DemoMetaDataDialect.class);
         Out.kv("HSQLDialect, property = DemoMetaDataDialect",
-            Out.simpleName(MetaDataDialectFactory.createMetaDataDialect(new HSQLDialect(), withProperty)));
+            Out.simpleName(RevengDialectFactory.createMetaDataDialect(new HSQLDialect(), withProperty)));
+        Out.note("CHANGED in 7: org.hibernate.cfg.MetaDataDialectFactory -> org.hibernate.tool.api.reveng.RevengDialectFactory; "
+            + "org.hibernate.cfg.reveng.dialect.MetaDataDialect -> org.hibernate.tool.api.reveng.RevengDialect; "
+            + "configure(ReverseEngineeringRuntimeInfo) -> configure(ConnectionProvider) (runtime-info class removed). "
+            + "HSQLDialect now gets its own HSQLMetaDataDialect.");
     }
 
-    static void jdbcMetaDataDialect(ReverseEngineeringRuntimeInfo runtimeInfo) {
-        MetaDataDialect dialect = new JDBCMetaDataDialect();
-        dialect.configure(runtimeInfo);
+    static void jdbcMetaDataDialect(ConnectionProvider connectionProvider) {
+        RevengDialect dialect = new JDBCMetaDataDialect();
+        dialect.configure(connectionProvider);
         try {
             Out.row("50", "JDBCMetaDataDialect.getTables(null, PUBLIC, null) — TABLEs and VIEWs");
             print(dialect.getTables(null, "PUBLIC", null), dialect, "TABLE_NAME", "TABLE_TYPE");
@@ -102,29 +104,33 @@ public class MetaDataDialectMain {
             Out.kv("needQuote(\"EMPLOYEE\") / needQuote(\"my table\")",
                 dialect.needQuote("EMPLOYEE") + " / " + dialect.needQuote("my table"));
             Out.kv("is an AbstractMetaDataDialect", dialect instanceof AbstractMetaDataDialect);
+            Out.note("CHANGED in 7: org.hibernate.cfg.reveng.dialect.{Abstract,JDBC}MetaDataDialect -> "
+                + "org.hibernate.tool.internal.reveng.dialect.*; same row maps and keys.");
         } finally {
             dialect.close();
         }
     }
 
-    static void customDialect(ReverseEngineeringRuntimeInfo runtimeInfo) {
+    static void customDialect(ConnectionProvider connectionProvider) {
         Out.row("49/52", "DemoMetaDataDialect (extends JDBCMetaDataDialect) — overridden getTables, TABLE only");
         DemoMetaDataDialect dialect = new DemoMetaDataDialect();
-        dialect.configure(runtimeInfo);
+        dialect.configure(connectionProvider);
         try {
             print(dialect.getTables(null, "PUBLIC", null), dialect, "TABLE_NAME", "TABLE_TYPE");
             Out.line("The HIGH_EARNERS view is gone. The override uses the inherited protected helpers "
-                + "getMetaData(), caseForSearch(..) and getSQLExceptionConverter().");
+                + "getMetaData() and caseForSearch(..), and core's SqlExceptionHelper to convert SQLExceptions.");
             Out.kv("needQuote(\"Employee\") (overridden)", dialect.needQuote("Employee"));
+            Out.note("REMOVED in 7: AbstractMetaDataDialect.getSQLExceptionConverter() (Tools 6) -> "
+                + "new SqlExceptionHelper(false).convert(sqlException, message, sql) in the custom dialect.");
         } finally {
             dialect.close();
         }
     }
 
-    static void mySqlDialect(ReverseEngineeringRuntimeInfo runtimeInfo) {
+    static void mySqlDialect(ConnectionProvider connectionProvider) {
         Out.row("51", "MySQLMetaDataDialect — MySQL-only SQL; run against HSQLDB to show the error path");
         MySQLMetaDataDialect dialect = new MySQLMetaDataDialect();
-        dialect.configure(runtimeInfo);
+        dialect.configure(connectionProvider);
         try {
             Out.kv("superclass", dialect.getClass().getSuperclass().getName());
             Out.line("getTables/getColumns: same as JDBCMetaDataDialect but null patterns become '%' (works on HSQLDB too):");
@@ -138,6 +144,12 @@ public class MetaDataDialectMain {
                 Out.kv("getSQL()", e.getSQL());
                 Out.kv("getSQLException()", e.getSQLException().getMessage());
                 Out.note("The JDBC SQLException was turned into a typed JDBCException by the SQLExceptionConverter (row 38).");
+            } catch (RuntimeException e) {
+                Out.kv("thrown", e.getClass().getName());
+                Out.kv("message", e.getMessage());
+                Out.kv("getCause()", e.getCause() == null ? "null" : e.getCause().getClass().getName() + ": " + e.getCause().getMessage());
+                Out.note("CHANGED in 7: the built-in metadata dialects no longer have an SQLExceptionConverter (Tools 6); they "
+                    + "wrap the SQLException in a plain RuntimeException instead of throwing a typed JDBCException.");
             }
         } finally {
             dialect.close();
@@ -149,7 +161,7 @@ public class MetaDataDialectMain {
         try (Connection connection = DemoDatabase.openConnection()) {
             Statement statement = connection.createStatement();
             ResultSet rs = statement.executeQuery("SELECT NAME, BUDGET FROM DEPARTMENT ORDER BY NAME");
-            ResultSetIterator iterator = new ResultSetIterator(statement, rs, converter) {
+            ResultSetIterator iterator = new ResultSetIterator(statement, rs) {
                 @Override
                 protected Map<String, Object> convertRow(ResultSet row) throws SQLException {
                     Map<String, Object> map = new HashMap<>();
@@ -167,6 +179,8 @@ public class MetaDataDialectMain {
             iterator.close(); // closes the ResultSet and the Statement
             Out.kv("statement.isClosed() after iterator.close()", statement.isClosed());
         }
+        Out.note("CHANGED in 7: org.hibernate.cfg.reveng.dialect.ResultSetIterator(Statement, ResultSet, SQLExceptionConverter) -> "
+            + "org.hibernate.tool.internal.reveng.dialect.ResultSetIterator(Statement, ResultSet); handleSQLException converts itself.");
 
         Out.row("38", "SQLExceptionConverter.convert(SQLException, message, sql) — SQLState decides the type");
         Out.kv("converter class", Out.simpleName(converter));
@@ -180,9 +194,13 @@ public class MetaDataDialectMain {
             JDBCException converted = converter.convert(new SQLException(sample[1], sample[0]), "demo", "SELECT 1");
             Out.kv("SQLState " + sample[0] + " (" + sample[1] + ")", converted.getClass().getSimpleName());
         }
+        Out.note("CHANGED in 7: SQLState 42501 (insufficient privilege) now maps to the new org.hibernate.exception.AuthException "
+            + "(7.0; 5.6 gave SQLGrammarException). These samples are plain SQLExceptions; a real driver error is usually a typed "
+            + "java.sql.SQLSyntaxErrorException, which is mapped by exception type first, so the missing-table query in "
+            + "NativeSqlSessionMain is still an SQLGrammarException.");
     }
 
-    private static void print(Iterator<Map<String, Object>> rows, MetaDataDialect dialect, String... keys) {
+    private static void print(Iterator<Map<String, Object>> rows, RevengDialect dialect, String... keys) {
         try {
             while (rows.hasNext()) {
                 Map<String, Object> row = rows.next();

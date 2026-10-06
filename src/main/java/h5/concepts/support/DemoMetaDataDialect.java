@@ -6,21 +6,28 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.hibernate.cfg.reveng.dialect.JDBCMetaDataDialect;
-import org.hibernate.cfg.reveng.dialect.ResultSetIterator;
+import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
+import org.hibernate.tool.internal.reveng.dialect.JDBCMetaDataDialect;
+import org.hibernate.tool.internal.reveng.dialect.ResultSetIterator;
 
 /**
  * [Rows 38, 48, 49, 50, 52] A custom Tools metadata dialect, the way wmstdappdbimpl's
  * {@code WMGenericMetaDataDialect} / {@code WMMySQLMetaDataDialect} are built:
  * <ul>
  *   <li>extends {@link JDBCMetaDataDialect} (which extends {@code AbstractMetaDataDialect}),</li>
- *   <li>uses the inherited protected helpers {@code getMetaData()}, {@code caseForSearch()} and
- *       {@code getSQLExceptionConverter()},</li>
+ *   <li>uses the inherited protected helpers {@code getMetaData()} and {@code caseForSearch()},</li>
  *   <li>returns rows through an anonymous {@link ResultSetIterator}.</li>
  * </ul>
  * Selected by the Tools property {@code hibernatetool.metadatadialect}.
+ * <p>
+ * Tools 5.6 gave metadata dialects {@code getSQLExceptionConverter()} (from the removed
+ * {@code ReverseEngineeringRuntimeInfo}); in 7 the built-in dialects just throw {@code RuntimeException}. To keep
+ * typed {@code JDBCException}s this dialect converts with core's {@link SqlExceptionHelper}.
  */
 public class DemoMetaDataDialect extends JDBCMetaDataDialect {
+
+    /** SQLException -> typed JDBCException, replaces the removed getSQLExceptionConverter(). */
+    private static final SqlExceptionHelper SQL_EXCEPTION_HELPER = new SqlExceptionHelper(false);
 
     /** Counts getTables(..) calls so the demo can prove this dialect was actually used. */
     public static int getTablesCalls;
@@ -34,7 +41,7 @@ public class DemoMetaDataDialect extends JDBCMetaDataDialect {
             String t = caseForSearch(table);
             // Only real tables; the stock JDBCMetaDataDialect also asks for VIEWs.
             ResultSet tables = getMetaData().getTables(c, s, t, new String[] {"TABLE"});
-            return new ResultSetIterator(tables, getSQLExceptionConverter()) {
+            return new ResultSetIterator(tables) {
 
                 private final Map<String, Object> row = new HashMap<>();
 
@@ -51,12 +58,12 @@ public class DemoMetaDataDialect extends JDBCMetaDataDialect {
 
                 @Override
                 protected Throwable handleSQLException(SQLException e) {
-                    // SQLExceptionConverter: JDBC SQLException -> typed Hibernate JDBCException
-                    return getSQLExceptionConverter().convert(e, "Could not get list of tables from database", null);
+                    // SQLExceptionConverter (via SqlExceptionHelper): JDBC SQLException -> typed Hibernate JDBCException
+                    return SQL_EXCEPTION_HELPER.convert(e, "Could not get list of tables from database", null);
                 }
             };
         } catch (SQLException e) {
-            throw getSQLExceptionConverter().convert(e, "Could not get list of tables from database", null);
+            throw SQL_EXCEPTION_HELPER.convert(e, "Could not get list of tables from database", null);
         }
     }
 
