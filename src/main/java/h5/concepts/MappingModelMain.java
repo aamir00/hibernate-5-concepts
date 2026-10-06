@@ -79,13 +79,14 @@ public class MappingModelMain {
                 if (value.isSimpleValue()) {
                     SimpleValue simpleValue = (SimpleValue) value;
                     generator = " typeName=" + simpleValue.getTypeName();
-                    // 7: the generator getters are gone from core's SimpleValue; Tools' reverse-engineered values keep them.
-                    if (value instanceof EnhancedValue enhancedValue && enhancedValue.getIdentifierGeneratorStrategy() != null
-                            && table.getPrimaryKey().containsColumn(column)) {
-                        generator += " idGenerator=" + enhancedValue.getIdentifierGeneratorStrategy()
-                            + " params=" + enhancedValue.getIdentifierGeneratorProperties();
-                    } else if (table.getPrimaryKey().containsColumn(column)) {
-                        generator += " (id value " + value.getClass().getSimpleName() + ": no generator getters in 7)";
+                    // 7: the generator getters are gone from core's SimpleValue. Tools' reverse-engineered identifier
+                    // (PersistentClass.getIdentifier()) is an EnhancedValue that keeps them. Read them from the identifier,
+                    // not the column's value: for EMPLOYEE_DETAIL (PK shared with EMPLOYEE) the column's value is the
+                    // OneToOne, whose default "assigned" (what 5.x/6.x printed) is not the real generator ("foreign").
+                    if (persistentClass.getIdentifier() instanceof EnhancedValue enhancedId
+                            && enhancedId.getIdentifierGeneratorStrategy() != null && table.getPrimaryKey().containsColumn(column)) {
+                        generator += " idGenerator=" + enhancedId.getIdentifierGeneratorStrategy()
+                            + " params=" + enhancedId.getIdentifierGeneratorProperties();
                     }
                 }
                 // wmstdappdbimpl (HibernateColumnMetaProvider) reads the no-arg getSqlType()/getSqlTypeCode(), which the

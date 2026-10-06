@@ -121,7 +121,7 @@ Tools 7.3.13 has the same API as Tools 6.6.58, so all these changes are in core 
 | # | 6.6.58 | 7.3.13 |
 |---|---|---|
 | build | core + tools-orm 6.6.58, Java 11+, JPA 3.1 | core + tools-orm 7.3.13, **Java 17+**, **JPA 3.2** |
-| 14 | `SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorParameters()` | **removed**; reverse-engineered ids are Tools' `EnhancedBasicValue` → `EnhancedValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties()`; a shared-PK one-to-one id (`OneToOne` value) has no generator getters |
+| 14 | `SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorParameters()` | **removed**; reverse-engineered ids are Tools' `EnhancedBasicValue` → `EnhancedValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties()`, read from `PersistentClass.getIdentifier()` (for the shared-PK `EMPLOYEE_DETAIL` that gives `foreign`; the column's own value is the `OneToOne`, whose `assigned` default 5.x/6.x printed) |
 | 11/17 | `Table.getForeignKeys().values()` (iterators deprecated) | `getForeignKeyCollection()` (`getForeignKeys()` deprecated for removal; `getUniqueKeyIterator()/getForeignKeyIterator()` removed) |
 | 20 | `@org.hibernate.annotations.Cascade({PERSIST, MERGE, REMOVE})` | JPA `@OneToMany(cascade = {PERSIST, MERGE, REMOVE})` — `@Cascade` and Hibernate's `CascadeType` are deprecated for removal; `SAVE_UPDATE`/`DELETE` removed |
 | 20/30 | `session.get(Class, id)` | `session.find(Class, id)` (`get` deprecated for removal); `save/saveOrUpdate/update/delete/load` removed |
