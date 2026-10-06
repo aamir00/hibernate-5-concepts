@@ -1,10 +1,12 @@
 # hibernate-5-concepts
 
 Runnable examples of **every Hibernate class/concept used by `wmstdappdbimpl`**, ported to
-`org.hibernate.orm:hibernate-core` **7.3.13.Final** and `org.hibernate.tool:hibernate-tools-orm` **7.3.13.Final**
-(branch `hibernate-6-to-7`, built on top of `hibernate-6`; `main` has the original 5.6.15 version). The plans and
-research behind the port are in [`plans/5to6.md`](plans/5to6.md) and [`plans/6to7.md`](plans/6to7.md); what changed
-per row is in [Changed in this version](#changed-in-this-version-6658--7313) and
+`org.hibernate.orm:hibernate-core` **7.4.12.Final** and `org.hibernate.orm:hibernate-reveng` **7.4.12.Final**
+(Hibernate Tools, which moved into the ORM project in 7.4). Branch `hibernate-7.4`, built on top of
+`hibernate-6-to-7` (7.3.13) and `hibernate-6` (6.6.58); `main` has the original 5.6.15 version. The plans and
+research behind the port are in [`plans/`](plans); what changed per row is in
+[Changed in this version](#changed-in-this-version-7313--7412),
+[Changed 6.6.58 → 7.3.13](#changed-6658--7313-branch-hibernate-6-to-7) and
 [Changed 5.6.15 → 6.6.58](#changed-5615--6658-branch-hibernate-6).
 The row numbers below (and in every `=== [Row N] ... ===` header the Mains print) are the rows of
 [`../hibernate-classes-and-concepts.md`](../hibernate-classes-and-concepts.md).
@@ -94,14 +96,27 @@ Or open the folder in IntelliJ (Gradle import) and click the run arrow next to a
 | 55 | `hbm2x.AbstractExporter` | `ExporterMain` |
 | 56 | `hbm2x.GenericExporter` | `ExporterMain.SummaryExporter` |
 | 57 | `hbm2x.pojo.POJOClass` | `ExporterMain.SummaryExporter.resolveFilename(POJOClass)`, `templates/entity-summary.ftl` |
-| 58 | `hbm2x.ant.ConfigurationTask` | `ExporterMain` (note only — not in Tools 5.6.15, 6.6 or 7.3) |
+| 58 | `hbm2x.ant.ConfigurationTask` | `ExporterMain` (note only — not in Tools 5.6.15, 6.6, 7.3 or 7.4) |
 
-## Changed in this version (6.6.58 → 7.3.13)
+## Changed in this version (7.3.13 → 7.4.12)
 
 Every row still runs. `run-output.txt` holds the full output of `./gradlew run` on this branch (timings and the
-project path normalised): `git diff hibernate-6..hibernate-6-to-7` shows the 6 → 7 code and behaviour changes,
-`git diff main..hibernate-6-to-7` the whole 5 → 7 path. Tools 7.3.13 has the same API as Tools 6.6.58, so all
-changes are in core ORM.
+project path normalised): `git diff hibernate-6-to-7..hibernate-7.4` shows the 7.3 → 7.4 changes,
+`git diff main..hibernate-7.4` the whole 5 → 7.4 path. Core 7.4 only added APIs; the changes are in Tools.
+
+| # | 7.3.13 | 7.4.12 |
+|---|---|---|
+| build | `org.hibernate.tool:hibernate-tools-orm:7.3.13.Final` | `org.hibernate.orm:hibernate-reveng:7.4.12.Final` (released with core; core declared explicitly because reveng has it at runtime scope; exclude JDT) |
+| 39–57 | `org.hibernate.tool.api.reveng.*`, `tool.api.{export,metadata}.*` | `org.hibernate.tool.reveng.api.core.*`, `tool.reveng.api.{export,metadata}.*` |
+| 42–52 | `org.hibernate.tool.internal.reveng.{strategy,dialect,util}.*`, `tool.internal.{util,export}.*` | `org.hibernate.tool.reveng.internal.core.{strategy,dialect,util}.*`, `tool.reveng.internal.{util,export}.*` |
+| 55/56 | after `exporter.start()` the caller destroys the exporter's service registry | `start()` ends with `stop()`, which closes it (`start(false)` to keep it) |
+| 22–28 | `PostgreSQLDialect()` assumes 13 | assumes 14 |
+
+Same API and same behaviour otherwise; `ExporterConstants`/`MetadataConstants` key strings are unchanged.
+
+## Changed 6.6.58 → 7.3.13 (branch `hibernate-6-to-7`)
+
+Tools 7.3.13 has the same API as Tools 6.6.58, so all these changes are in core ORM.
 
 | # | 6.6.58 | 7.3.13 |
 |---|---|---|
@@ -162,7 +177,10 @@ In-memory HSQLDB `jdbc:hsqldb:mem:hr_demo`, schema `PUBLIC`, created once per JV
 
 `EntityHqlMain` uses its own database (`jdbc:hsqldb:mem:entity_demo`), created by `hbm2ddl` from the two entities.
 
-## Things the runs show (7.3.13 behaviour, compared with 5.6.15)
+## Things the runs show (7.4.12 behaviour, compared with 5.6.15)
+
+7.4-specific (vs 7.3): only the Tools package names, `PostgreSQLDialect()` assuming version 14, and the exporter
+closing its own service registry (see above). SQL, statement counts and results are identical to 7.3.
 
 7.3-specific (vs 6.6):
 - **Dialects:** no-arg dialects assume newer minimum versions (DB2 11.1, PostgreSQL 13, SQL Server 12, HANA 2.0.50);
@@ -196,15 +214,16 @@ Since 5.6 (unchanged from 6.6):
 - **Dialects:** each no-arg dialect assumes the oldest DB version it supports (shown in `DialectsMain`).
   Setting `hibernate.dialect` explicitly logs `HHH90000025`, but it is still required here because JDBC
   metadata access is off.
-- **Tools needs explicit cleanup:** `createMetadata()` still builds its own service registry that nobody
-  closes. Destroy it through `MetadataImpl.getBootstrapContext()` (as wmstdappdbimpl does).
-- **`hibernate.reveng.xml`:** Tools 6.6/7.3 still do not bundle the reverse-engineering DTD, so a DOCTYPE line
+- **Tools needs explicit cleanup:** `MetadataDescriptor.createMetadata()` still builds its own service registry
+  that nobody closes. Destroy it through `MetadataImpl.getBootstrapContext()` (as wmstdappdbimpl does). Exporters
+  close theirs themselves from 7.4.
+- **`hibernate.reveng.xml`:** Tools 6.6/7.3/7.4 still do not bundle the reverse-engineering DTD, so a DOCTYPE line
   makes the JDK parser try to download it. `RevengSupport.revengXml()` leaves it out.
 - **`MySQLMetaDataDialect.getSuggestedPrimaryKeyStrategyName`** runs MySQL-only `show table status`. On any
   other DB it now fails with a plain `RuntimeException` wrapping the `SQLException` (5.x: a typed
   `SQLGrammarException` with `getSQL()`).
 - **Exporter:** `POJOClass.getQualifiedDeclarationName()` repeats the package (`com.demo.hr.com.demo.hr.X`) in
-  Tools 6.6 and 7.3.
+  Tools 6.6, 7.3 and 7.4.
 - **Logging:** Tools 6/7 log every reverse-engineered table at INFO through java.util.logging; `Out` keeps only its
   warnings (e.g. "Binding column twice should not happen", logged for `EMPLOYEE.DEPT_ID` and `EMPLOYEE_DETAIL.EMP_ID`,
   which are both a property column and a foreign-key column; reverse engineering still completes normally).

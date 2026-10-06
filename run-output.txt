@@ -1,6 +1,6 @@
 
 ####################################################################################################
-#  RunAllMain — every Hibernate concept used by wmstdappdbimpl, on Hibernate 7.3.13
+#  RunAllMain — every Hibernate concept used by wmstdappdbimpl, on Hibernate 7.4.12
 ####################################################################################################
 
 ####################################################################################################
@@ -29,11 +29,11 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
 
 === [Row 5] org.hibernate.boot.Metadata — built here by Hibernate Tools reverse engineering ===
 WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(DEPT_ID)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(EMP_ID)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(EMP_ID)
   metadata class                                 : org.hibernate.boot.internal.MetadataImpl
   getEntityBindings().size()                     : 4
@@ -72,11 +72,11 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
   render()                                       : PUBLIC.EMPLOYEE
   NOTE: wmstdappdbimpl (WMMySQLMetaDataDialect) builds one only to put a readable table name in error messages.
 WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(DEPT_ID)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(EMP_ID)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(EMP_ID)
 
 === [Row 10] PersistentClass  com.demo.hr.DepartmentEntity ===
@@ -294,7 +294,7 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
     HSQLDialect                    quotes=""  extends Dialect                            deprecated=false identity=true  version=2.6.1
     MySQLDialect                   quotes=``  extends Dialect                            deprecated=false identity=true  version=8.0
     OracleDialect                  quotes=""  extends Dialect                            deprecated=false identity=true  version=19.0
-    PostgreSQLDialect              quotes=""  extends Dialect                            deprecated=false identity=true  version=13.0
+    PostgreSQLDialect              quotes=""  extends Dialect                            deprecated=false identity=true  version=14.0
     SQLServerDialect               quotes=[]  extends AbstractTransactSQLDialect         deprecated=false identity=true  version=12.0
   Quoted identifier, the way QueryCodegenEntityBuilder builds it:
   DB2Dialect                                     : "Employee"
@@ -445,6 +445,8 @@ WARN error - user lacks privilege or object not found: NO_SUCH_TABLE
   getDetectManyToMany() / OneToOne()             : true / true
   getDetectOptimsticLock() (sic)                 : true
   tableToClassName(EMPLOYEE_DETAIL) now          : com.demo.hr.EmployeeDetail
+  RevengStrategy / DefaultStrategy packages      : org.hibernate.tool.reveng.api.core / org.hibernate.tool.reveng.internal.core.strategy
+  NOTE: CHANGED in 7.4: Hibernate Tools moved into ORM as org.hibernate.orm:hibernate-reveng; org.hibernate.tool.api.reveng -> org.hibernate.tool.reveng.api.core, org.hibernate.tool.internal.reveng.strategy -> org.hibernate.tool.reveng.internal.core.strategy (same API).
   NOTE: wmstdappdbimpl sets the same settings object on both the default (innermost) strategy and the outer one.
 
 === [Row 46] TableFilter — include/exclude by catalog/schema/name pattern ===
@@ -460,7 +462,7 @@ WARN error - user lacks privilege or object not found: NO_SUCH_TABLE
         <sql-type jdbc-type="NVARCHAR" hibernate-type="string"/>
       </type-mapping>
     </hibernate-reverse-engineering>
-  strategy class                                 : org.hibernate.tool.internal.reveng.strategy.OverrideRepository$2
+  strategy class                                 : org.hibernate.tool.reveng.internal.core.strategy.OverrideRepository$2
   excludeTable(PUBLIC.AUDIT_LOG)                 : true
   columnToHibernateTypeName VARCHAR(1000)        : text   (default strategy said: string)
   getSchemaSelections()                          : 1 selection(s), schema PUBLIC
@@ -476,7 +478,7 @@ WARN error - user lacks privilege or object not found: NO_SUCH_TABLE
   Chain: DemoRevengStrategy -> OverrideRepository strategy -> DefaultStrategy
 
 === [Row 39/40] MetadataDescriptorFactory.createReverseEngineeringDescriptor(strategy, properties) — a MetadataDescriptor ===
-  descriptor class                               : org.hibernate.tool.internal.metadata.RevengMetadataDescriptor
+  descriptor class                               : org.hibernate.tool.reveng.internal.metadata.RevengMetadataDescriptor
   getProperties().hibernatetool.metadatadialect  : h5.concepts.support.DemoMetaDataDialect
   getProperties().get(PREFER_BASIC_COMPOSITE_IDS) : true
   NOTE: REMOVED in 6: the public JdbcMetadataDescriptor(strategy, properties, preferBasicCompositeIds) constructor -> MetadataDescriptorFactory.createReverseEngineeringDescriptor(strategy, properties); the flag is now the Boolean property MetadataConstants.PREFER_BASIC_COMPOSITE_IDS.
@@ -484,11 +486,11 @@ WARN error - user lacks privilege or object not found: NO_SUCH_TABLE
 
 === [Row 39] descriptor.createMetadata() — connects over JDBC, reads the schema, builds Metadata ===
 WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(DEPT_ID)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(EMP_ID)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(EMP_ID)
   com.demo.hr.DepartmentEntity   (table DEPARTMENT)
       id: deptId
@@ -527,10 +529,11 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
 ####################################################################################################
 
 === [Row 48] RevengDialectFactory (5.x MetaDataDialectFactory) — property hibernatetool.metadatadialect, else from the SQL Dialect ===
-  HSQLDialect, no property                       : org.hibernate.tool.internal.reveng.dialect.HSQLMetaDataDialect
-  MySQLDialect, no property                      : org.hibernate.tool.internal.reveng.dialect.MySQLMetaDataDialect
-  OracleDialect, no property                     : org.hibernate.tool.internal.reveng.dialect.OracleMetaDataDialect
+  HSQLDialect, no property                       : org.hibernate.tool.reveng.internal.core.dialect.HSQLMetaDataDialect
+  MySQLDialect, no property                      : org.hibernate.tool.reveng.internal.core.dialect.MySQLMetaDataDialect
+  OracleDialect, no property                     : org.hibernate.tool.reveng.internal.core.dialect.OracleMetaDataDialect
   HSQLDialect, property = DemoMetaDataDialect    : h5.concepts.support.DemoMetaDataDialect
+  NOTE: CHANGED in 7.4: RevengDialect/RevengDialectFactory moved to org.hibernate.tool.reveng.api.core and the metadata dialects to org.hibernate.tool.reveng.internal.core.dialect (Tools is now ORM's hibernate-reveng).
 WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
 
 === [Row 50] JDBCMetaDataDialect.getTables(null, PUBLIC, null) — TABLEs and VIEWs ===
@@ -577,7 +580,7 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
   needQuote("Employee") (overridden)             : true
 
 === [Row 51] MySQLMetaDataDialect — MySQL-only SQL; run against HSQLDB to show the error path ===
-  superclass                                     : org.hibernate.tool.internal.reveng.dialect.JDBCMetaDataDialect
+  superclass                                     : org.hibernate.tool.reveng.internal.core.dialect.JDBCMetaDataDialect
   getTables/getColumns: same as JDBCMetaDataDialect but null patterns become '%' (works on HSQLDB too):
     COLUMN_NAME=PROJECT_ID  TYPE_NAME=INTEGER  
     COLUMN_NAME=TITLE  TYPE_NAME=VARCHAR  
@@ -607,18 +610,18 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
 === [Row 55] AbstractExporter — output directory, metadata descriptor, template path, properties ===
   exporter is an AbstractExporter                : true
   DESTINATION_FOLDER                             : <project>/build/export-out
-  NOTE: CHANGED in 6: the setters (setOutputDirectory, setMetadataDescriptor, setTemplatePath, setTemplateName, setFilePattern, setForEach) were removed -> exporter.getProperties().put(ExporterConstants.X, value); getOutputDirectory()/getTemplateName() are now protected and getFilePattern() private.
+  NOTE: CHANGED in 6: the setters (setOutputDirectory, setMetadataDescriptor, setTemplatePath, setTemplateName, setFilePattern, setForEach) were removed -> exporter.getProperties().put(ExporterConstants.X, value); getOutputDirectory()/getTemplateName() are now protected and getFilePattern() private. CHANGED in 7.4: the exporters live in org.hibernate.tool.reveng.internal.export.* (artifact hibernate-reveng); the ExporterConstants key strings are unchanged.
 
 === [Row 56] GenericExporter — template + file pattern, for-each entity ===
   TEMPLATE_NAME                                  : templates/entity-summary.ftl
   FILE_PATTERN                                   : {package-name}/{class-name}.summary.txt
   exporter.start() ...
 WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(DEPT_ID)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(EMP_ID)
-<timestamp> org.hibernate.tool.internal.reveng.binder.BinderUtils checkColumnForMultipleBinding
+<timestamp> org.hibernate.tool.reveng.internal.core.binder.BinderUtils checkColumnForMultipleBinding
 WARNING: Binding column twice should not happen. Column(EMP_ID)
 
 === [Row 57] POJOClass  DepartmentEntity ===
@@ -648,6 +651,7 @@ WARNING: Binding column twice should not happen. Column(EMP_ID)
   isComponent() / hasIdentifierProperty()        : false / true
   getDecoratedObject()                           : org.hibernate.mapping.RootClass
   resolveFilename ->                             : com/demo/hr/EmployeeDetailEntity.summary.txt
+  NOTE: CHANGED in 7.4: start() ends with stop(), which closes the service registry the exporter's Metadata was built with. Up to 7.3 that registry had to be destroyed by hand through MetadataImpl.getBootstrapContext(); now getMetadata() after start() would reverse-engineer the schema again. start(false) skips the stop.
   resolveFilename(POJOClass) calls               : 4
   resolveFilename(String) calls                  : 0   (an overload, not an override: Tools never calls it — same as WMGenericExporter)
 
