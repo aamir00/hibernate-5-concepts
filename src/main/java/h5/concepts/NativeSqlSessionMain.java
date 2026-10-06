@@ -103,13 +103,16 @@ public class NativeSqlSessionMain {
                 Out.kv("scroll class", Out.simpleName(scroll));
                 while (scroll.next()) {
                     Object[] row = scroll.get(); // typed ScrollableResults<Object[]> in 6 (raw Object[] in 5.x)
-                    Out.line("  position " + scroll.getPosition() + ": " + row[0] + " " + row[1] + " " + row[2]);
+                    Out.line("  position " + scroll.getPosition() + ": " + row[0] + " " + row[1] + " " + row[2]
+                        + "  (HIRED_ON as " + row[2].getClass().getName() + ")");
                 }
             } finally {
                 scroll.close();
             }
             Out.note("CHANGED in 7: getRowNumber() (0-based) is deprecated for removal -> getPosition() (1-based); "
-                + "ScrollableResults is AutoCloseable but no longer Closeable.");
+                + "ScrollableResults is AutoCloseable but no longer Closeable. Native date/time columns now come back as "
+                + "java.time types (5.x/6.x: java.sql.Date etc.; hibernate.query.native.prefer_jdbc_datetime_types=true "
+                + "restores those).");
 
             Out.row("35", "AbstractScrollableResults.getResultSet() — REMOVED in 6");
             try (ScrollableResults<Object[]> metaScroll = query.scroll(ScrollMode.FORWARD_ONLY)) {
