@@ -2,9 +2,11 @@
 
 Runnable examples of **every Hibernate class/concept used by `wmstdappdbimpl`**, ported directly from the
 versions it uses today (`hibernate-core-jakarta` 5.6.15.Final + `hibernate-tools` 5.6.15.Final) to
-`org.hibernate.orm:hibernate-core` **7.3.13.Final** and `org.hibernate.tool:hibernate-tools-orm` **7.3.13.Final**
-(branch `hibernate-5-to-7`, a direct 5 → 7 jump; see [`plans/5to7.md`](plans/5to7.md)).
-Every row of the 5.6 inventory is still shown. Where an API was renamed or removed, the Main uses the supported 7.3
+`org.hibernate.orm:hibernate-core` **7.4.12.Final** and `org.hibernate.orm:hibernate-reveng` **7.4.12.Final**
+(Hibernate Tools, which moved into the ORM project in 7.4). Branch `hibernate-5-to-7.4`: the direct 5 → 7.3 jump
+of `hibernate-5-to-7` (see [`plans/5to7.md`](plans/5to7.md)), then 7.3 → 7.4 on top
+(see [`plans/7.3to7.4.md`](plans/7.3to7.4.md)).
+Every row of the 5.6 inventory is still shown. Where an API was renamed or removed, the Main uses the supported 7.4
 replacement and prints a `NOTE: CHANGED in 7: old -> new` / `NOTE: REMOVED in 7: ...` line.
 The row numbers below (and in every `=== [Row N] ... ===` header the Mains print) are the rows of
 [`../hibernate-classes-and-concepts.md`](../hibernate-classes-and-concepts.md).
@@ -41,7 +43,7 @@ Or open the folder in IntelliJ (Gradle import) and click the run arrow next to a
 
 ## Row → where it is demonstrated
 
-Class names are the 5.6 ones (the inventory); the 7.3 replacement is given where it differs.
+Class names are the 5.6 ones (the inventory); the 7.4 replacement is given where it differs.
 
 | # | Class | Demonstrated in |
 |---|---|---|
@@ -96,7 +98,7 @@ Class names are the 5.6 ones (the inventory); the 7.3 replacement is given where
 | 55 | `hbm2x.AbstractExporter` → `tool.internal.export.common.AbstractExporter` | `ExporterMain` |
 | 56 | `hbm2x.GenericExporter` → `tool.internal.export.common.GenericExporter` | `ExporterMain.SummaryExporter` |
 | 57 | `hbm2x.pojo.POJOClass` → `tool.internal.export.java.POJOClass` | `ExporterMain.SummaryExporter.resolveFilename(POJOClass)`, `templates/entity-summary.ftl` |
-| 58 | `hbm2x.ant.ConfigurationTask` | `ExporterMain` (note only — not in Tools 5.6.15 nor tools-orm 7.3.13) |
+| 58 | `hbm2x.ant.ConfigurationTask` | `ExporterMain` (note only — not in Tools 5.6.15 nor hibernate-reveng 7.4.12) |
 
 ## Demo database (`support/DemoDatabase`)
 
@@ -114,14 +116,14 @@ In-memory HSQLDB `jdbc:hsqldb:mem:hr_demo`, schema `PUBLIC`, created once per JV
 
 `EntityHqlMain` uses its own database (`jdbc:hsqldb:mem:entity_demo`), created by `hbm2ddl` from the two entities.
 
-## Changed in this version (5.6.15 → 7.3.13)
+## Changed in this version (5.6.15 → 7.4.12)
 
 "Since" is the version where the change first happened. A direct 5 → 7 jump hits all of them at once: most of the
 5.6 APIs below were not deprecated in 5.6, so there was no warning trail.
 
-| Row | 5.6.15 | 7.3.13 | Since |
+| Row | 5.6.15 | 7.4.12 | Since |
 |---|---|---|---|
-| build | `org.hibernate:hibernate-core-jakarta` + `org.hibernate:hibernate-tools` (excl. javax core, Ant, JDT) | `org.hibernate.orm:hibernate-core` + `org.hibernate.tool:hibernate-tools-orm` (excl. Ant, google-java-format) | 6.0 / Tools 6 |
+| build | `org.hibernate:hibernate-core-jakarta` + `org.hibernate:hibernate-tools` (excl. javax core, Ant, JDT) | `org.hibernate.orm:hibernate-core` + `org.hibernate.orm:hibernate-reveng` (excl. Ant, google-java-format, JDT) | 6.0 / Tools 6 / 7.4 |
 | setting | `hibernate.temp.use_jdbc_metadata_defaults=false` | `hibernate.boot.allow_jdbc_metadata_access=false` | 6.5 |
 | 11 | `Table.getColumnIterator()` | `getColumns()` | 6.0 |
 | 12 | `Column.getSqlType(Dialect, Mapping)`; `int` length/precision/scale (defaults 255/19/2) | `getSqlType(Metadata)`; `Long`/`Integer`/`Integer`, `null` when unset | 6.0 |
@@ -142,18 +144,23 @@ In-memory HSQLDB `jdbc:hsqldb:mem:hr_demo`, schema `PUBLIC`, created once per JV
 | 35 | reflective `org.hibernate.internal.AbstractScrollableResults.getResultSet()` | gone (class now in `internal.scrollable`); `session.doReturningWork(..)` + `ResultSetMetaData` | 6.0 / 7.0 |
 | 31 | `SessionImpl.connection()` | `getJdbcCoordinator().getLogicalConnection().getPhysicalConnection()` (SPI; public way: `doWork`/`doReturningWork`) | 6.0 |
 | 10 | `PersistentClass.getPropertyIterator()` | `getProperties()` | 6.0 |
-| 41–47, 53–54 | `org.hibernate.cfg.reveng.*`, `org.hibernate.tool.util.TableNameQualifier` | `org.hibernate.tool.api.reveng.*` (`RevengStrategy`, `RevengSettings`, `TableIdentifier.create`), `org.hibernate.tool.internal.reveng.strategy.*` (`DefaultStrategy`, `DelegatingStrategy`, `OverrideRepository`, `TableFilter`), `org.hibernate.tool.internal.util.{NameConverter, TableNameQualifier}` | Tools 6 |
+| 41–47, 53–54 | `org.hibernate.cfg.reveng.*`, `org.hibernate.tool.util.TableNameQualifier` | `org.hibernate.tool.reveng.api.core.*` (`RevengStrategy`, `RevengSettings`, `TableIdentifier.create`), `org.hibernate.tool.reveng.internal.core.strategy.*` (`DefaultStrategy`, `DelegatingStrategy`, `OverrideRepository`, `TableFilter`), `org.hibernate.tool.reveng.internal.util.{NameConverter, TableNameQualifier}` | Tools 6 / 7.4 |
 | 45 | `new SchemaSelection(catalog, schema)`; `addInputStream` closed the stream | `RevengStrategy.SchemaSelection` is an interface (`RevengSupport.schemaSelection`); caller closes the stream | Tools 6 |
 | 47 | `new Table("X")` sets the name | sets the *contributor*; `new Table(contributor, "X")` | 6.0 |
 | 39/40 | `new JdbcMetadataDescriptor(strategy, props, true)` | `MetadataDescriptorFactory.createReverseEngineeringDescriptor(strategy, props)` + `MetadataConstants.PREFER_BASIC_COMPOSITE_IDS` = `Boolean.TRUE` | Tools 6 |
-| 48 | `MetaDataDialectFactory`, `MetaDataDialect.configure(ReverseEngineeringRuntimeInfo)` | `RevengDialectFactory`, `RevengDialect.configure(ConnectionProvider)` | Tools 6 |
-| 49–52 | `cfg.reveng.dialect.*`, `getSQLExceptionConverter()`, `ResultSetIterator(.., converter)` | `tool.internal.reveng.dialect.*`; no converter (custom dialect uses core `SqlExceptionHelper`); `ResultSetIterator(stmt, rs)` | Tools 6 |
-| 55–57 | `tool.hbm2x.{AbstractExporter, GenericExporter, pojo.POJOClass}` + setters | `tool.internal.export.{common.AbstractExporter, common.GenericExporter, java.POJOClass}`; `getProperties().put(ExporterConstants.X, value)` | Tools 6 |
+| 48 | `MetaDataDialectFactory`, `MetaDataDialect.configure(ReverseEngineeringRuntimeInfo)` | `RevengDialectFactory`, `RevengDialect.configure(ConnectionProvider)` (`tool.reveng.api.core`) | Tools 6 / 7.4 |
+| 49–52 | `cfg.reveng.dialect.*`, `getSQLExceptionConverter()`, `ResultSetIterator(.., converter)` | `tool.reveng.internal.core.dialect.*`; no converter (custom dialect uses core `SqlExceptionHelper`); `ResultSetIterator(stmt, rs)` | Tools 6 |
+| 55–57 | `tool.hbm2x.{AbstractExporter, GenericExporter, pojo.POJOClass}` + setters | `tool.reveng.internal.export.{common.AbstractExporter, common.GenericExporter, java.POJOClass}`; `getProperties().put(ExporterConstants.X, value)`; `start()` closes the registry itself | Tools 6 / 7.4 |
 
-## Things the runs show (7.3.13 behaviour)
+"7.4" in the Since column means Tools moved into ORM as `hibernate-reveng` and renamed its packages again
+(`org.hibernate.tool.api.*` → `org.hibernate.tool.reveng.api.*`, `api.reveng` → `reveng.api.core`,
+`org.hibernate.tool.internal.*` → `org.hibernate.tool.reveng.internal.*`, `internal.reveng.*` → `reveng.internal.core.*`);
+same classes and methods. Core 7.4 only added APIs.
 
-`run-output.txt` is the RunAllMain output on 7.3.13 (timings, timestamps and the project path normalised). Compared
-with the 5.6.15 output (`git show HEAD~4:run-output.txt`, the baseline commit):
+## Things the runs show (7.4.12 behaviour)
+
+`run-output.txt` is the RunAllMain output on 7.4.12 (timings, timestamps and the project path normalised). Compared
+with the 5.6.15 output (`git show 2cdedb2:run-output.txt`, the baseline commit):
 
 - **Exceptions:** `Query.list()` on bad SQL now throws the `SQLGrammarException` itself (a `HibernateException`
   *and* a `PersistenceException`); 5.6 wrapped it in a plain `PersistenceException`. Code that unwraps
@@ -182,14 +189,18 @@ with the 5.6.15 output (`git show HEAD~4:run-output.txt`, the baseline commit):
 - **SQL:** 6+ SQL aliases (`e1_0`), insert column order, `fetch first ? rows only` paging, `left join` instead of
   `left outer join`; `FetchType.EAGER` still costs a second `SELECT` with HQL and one outer join with `find()`.
 - **Dialects:** no-arg dialects assume their minimum version (DB2 11.1, HANA 2.0.50, HSQL 2.6.1, MySQL 8.0,
-  Oracle 19, PostgreSQL 13, SQL Server 12); all extend `Dialect` (SQL Server via `AbstractTransactSQLDialect`) and
-  none is deprecated. 5.6's `OracleDialect`/`PostgreSQLDialect` were deprecated aliases of old versions.
+  Oracle 19, PostgreSQL 14 (13 up to 7.3), SQL Server 12); all extend `Dialect` (SQL Server via
+  `AbstractTransactSQLDialect`) and none is deprecated. 5.6's `OracleDialect`/`PostgreSQLDialect` were deprecated
+  aliases of old versions.
 - **Metadata dialects:** `HSQLDialect` maps to `HSQLMetaDataDialect` as before. `MySQLMetaDataDialect` on HSQLDB now
   fails with a plain `RuntimeException` wrapping the `SQLSyntaxErrorException` (5.6: typed `SQLGrammarException`).
 - **Exporter:** `POJOClass.getQualifiedDeclarationName()` returns `com.demo.hr.com.demo.hr.XEntity` (Tools 7
   fixed an inverted condition and now prefixes the package of an already qualified name; 5.6 returned
   `com.demo.hr.XEntity`). Use `getPackageName()` + `getDeclarationName()`. The template output is otherwise the same.
+- **Exporter cleanup (7.4):** `AbstractExporter.start()` now ends with `stop()`, which closes the service registry
+  of the exporter's `Metadata`. The 7.3 code destroyed it by hand after `start()`; on 7.4 that `getMetadata()` call
+  would reverse-engineer the schema again, so `ExporterMain` drops it (`start(false)` keeps the registry open).
 - **Unchanged:** `Configuration` bootstrap (not deprecated in 7), registry destroy through
-  `MetadataImpl.getBootstrapContext()` (Tools still never closes its registry), `hibernate.reveng.xml` format and the
+  `MetadataImpl.getBootstrapContext()` after `MetadataDescriptor.createMetadata()` (Tools still never closes that one), `hibernate.reveng.xml` format and the
   missing DTD (keep the DOCTYPE out), `StandardBasicTypes` names, `TableFilter`/strategy behaviour, the
   `getDetectOptimsticLock` typo. `Namespace.Name` is a record now (`Name[...]` instead of `Name{...}`).

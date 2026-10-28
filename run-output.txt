@@ -1,6 +1,6 @@
 
 ####################################################################################################
-#  RunAllMain — every Hibernate concept used by wmstdappdbimpl, on Hibernate ORM 7.3.13 + Tools 7.3.13
+#  RunAllMain — every Hibernate concept used by wmstdappdbimpl, on Hibernate ORM 7.4.12 + hibernate-reveng 7.4.12
 ####################################################################################################
 
 ####################################################################################################
@@ -87,7 +87,7 @@ WARNING BinderUtils - Binding column twice should not happen. Column(EMP_ID)
     BUDGET      getSqlType()=null       getSqlTypeCode()=2     getSqlType(md)=numeric(12,2)  len=null   prec=12   scale=2    nullable=true  unique=false typeName=big_decimal
   NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type.
   NOTE: CHANGED in 7: Table.getColumnIterator() -> getColumns() (removed in 6.0); Column.getSqlType(Dialect, Mapping) -> getSqlType(Metadata) (removed in 6.0); getLength()/getPrecision()/getScale() int -> Long/Integer/Integer, unset ones are null instead of 255/19/2 (6.0).
-  NOTE: REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties() (7.0, no core boot-model equivalent) -> read them from the entity's identifier (PersistentClass.getIdentifier()), which for reverse-engineered metadata is Tools' EnhancedBasicValue implementing org.hibernate.tool.internal.reveng.util.EnhancedValue. (Column.getValue() of a PK column that is also a one-to-one FK is the OneToOne, which never carries a generator in 7.)
+  NOTE: REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties() (7.0, no core boot-model equivalent) -> read them from the entity's identifier (PersistentClass.getIdentifier()), which for reverse-engineered metadata is Tools' EnhancedBasicValue implementing org.hibernate.tool.reveng.internal.core.util.EnhancedValue. (Column.getValue() of a PK column that is also a one-to-one FK is the OneToOne, which never carries a generator in 7.)
 
 === [Row 15] PrimaryKey via table.getPrimaryKey().getColumns() ===
   SYS_PK_10091                                   : (DEPT_ID)
@@ -121,7 +121,7 @@ WARNING BinderUtils - Binding column twice should not happen. Column(EMP_ID)
     VERSION     getSqlType()=null       getSqlTypeCode()=4     getSqlType(md)=integer        len=null   prec=null scale=null nullable=true  unique=false typeName=java.lang.Integer
   NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type.
   NOTE: CHANGED in 7: Table.getColumnIterator() -> getColumns() (removed in 6.0); Column.getSqlType(Dialect, Mapping) -> getSqlType(Metadata) (removed in 6.0); getLength()/getPrecision()/getScale() int -> Long/Integer/Integer, unset ones are null instead of 255/19/2 (6.0).
-  NOTE: REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties() (7.0, no core boot-model equivalent) -> read them from the entity's identifier (PersistentClass.getIdentifier()), which for reverse-engineered metadata is Tools' EnhancedBasicValue implementing org.hibernate.tool.internal.reveng.util.EnhancedValue. (Column.getValue() of a PK column that is also a one-to-one FK is the OneToOne, which never carries a generator in 7.)
+  NOTE: REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties() (7.0, no core boot-model equivalent) -> read them from the entity's identifier (PersistentClass.getIdentifier()), which for reverse-engineered metadata is Tools' EnhancedBasicValue implementing org.hibernate.tool.reveng.internal.core.util.EnhancedValue. (Column.getValue() of a PK column that is also a one-to-one FK is the OneToOne, which never carries a generator in 7.)
 
 === [Row 15] PrimaryKey via table.getPrimaryKey().getColumns() ===
   SYS_PK_10094                                   : (EMP_ID)
@@ -148,7 +148,7 @@ WARNING BinderUtils - Binding column twice should not happen. Column(EMP_ID)
     TITLE       getSqlType()=null       getSqlTypeCode()=12    getSqlType(md)=varchar(100)   len=100    prec=null scale=null nullable=false unique=false typeName=string
   NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type.
   NOTE: CHANGED in 7: Table.getColumnIterator() -> getColumns() (removed in 6.0); Column.getSqlType(Dialect, Mapping) -> getSqlType(Metadata) (removed in 6.0); getLength()/getPrecision()/getScale() int -> Long/Integer/Integer, unset ones are null instead of 255/19/2 (6.0).
-  NOTE: REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties() (7.0, no core boot-model equivalent) -> read them from the entity's identifier (PersistentClass.getIdentifier()), which for reverse-engineered metadata is Tools' EnhancedBasicValue implementing org.hibernate.tool.internal.reveng.util.EnhancedValue. (Column.getValue() of a PK column that is also a one-to-one FK is the OneToOne, which never carries a generator in 7.)
+  NOTE: REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties() (7.0, no core boot-model equivalent) -> read them from the entity's identifier (PersistentClass.getIdentifier()), which for reverse-engineered metadata is Tools' EnhancedBasicValue implementing org.hibernate.tool.reveng.internal.core.util.EnhancedValue. (Column.getValue() of a PK column that is also a one-to-one FK is the OneToOne, which never carries a generator in 7.)
 
 === [Row 15] PrimaryKey via table.getPrimaryKey().getColumns() ===
   SYS_PK_10100                                   : (PROJECT_ID)
@@ -175,7 +175,7 @@ WARNING BinderUtils - Binding column twice should not happen. Column(EMP_ID)
     BIO         getSqlType()=null       getSqlTypeCode()=-1    getSqlType(md)=varchar(1000)  len=1000   prec=null scale=null nullable=true  unique=false typeName=text
   NOTE: For reverse-engineered columns the no-arg getSqlType() is null and getSqlTypeCode() holds the JDBC type.
   NOTE: CHANGED in 7: Table.getColumnIterator() -> getColumns() (removed in 6.0); Column.getSqlType(Dialect, Mapping) -> getSqlType(Metadata) (removed in 6.0); getLength()/getPrecision()/getScale() int -> Long/Integer/Integer, unset ones are null instead of 255/19/2 (6.0).
-  NOTE: REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties() (7.0, no core boot-model equivalent) -> read them from the entity's identifier (PersistentClass.getIdentifier()), which for reverse-engineered metadata is Tools' EnhancedBasicValue implementing org.hibernate.tool.internal.reveng.util.EnhancedValue. (Column.getValue() of a PK column that is also a one-to-one FK is the OneToOne, which never carries a generator in 7.)
+  NOTE: REMOVED in 7: SimpleValue.getIdentifierGeneratorStrategy()/getIdentifierGeneratorProperties() (7.0, no core boot-model equivalent) -> read them from the entity's identifier (PersistentClass.getIdentifier()), which for reverse-engineered metadata is Tools' EnhancedBasicValue implementing org.hibernate.tool.reveng.internal.core.util.EnhancedValue. (Column.getValue() of a PK column that is also a one-to-one FK is the OneToOne, which never carries a generator in 7.)
 
 === [Row 15] PrimaryKey via table.getPrimaryKey().getColumns() ===
   SYS_PK_10098                                   : (EMP_ID)
@@ -310,7 +310,7 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
     HSQLDialect                    quotes=""  extends Dialect                            deprecated=false identity=true  version=2.6.1
     MySQLDialect                   quotes=``  extends Dialect                            deprecated=false identity=true  version=8.0
     OracleDialect                  quotes=""  extends Dialect                            deprecated=false identity=true  version=19.0
-    PostgreSQLDialect              quotes=""  extends Dialect                            deprecated=false identity=true  version=13.0
+    PostgreSQLDialect              quotes=""  extends Dialect                            deprecated=false identity=true  version=14.0
     SQLServerDialect               quotes=[]  extends AbstractTransactSQLDialect         deprecated=false identity=true  version=12.0
   Quoted identifier, the way QueryCodegenEntityBuilder builds it:
   DB2Dialect                                     : "Employee"
@@ -441,13 +441,13 @@ WARN error - user lacks privilege or object not found: NO_SUCH_TABLE
   byName.equals(qualified)                       : false
   TableIdentifier.create(Table)                  : TableIdentifier(PUBLIC.DEPARTMENT)
   new Table("DEPARTMENT").getName()              : null
-  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.TableIdentifier -> org.hibernate.tool.api.reveng.TableIdentifier; its constructors are private -> TableIdentifier.create(catalog, schema, name) / create(Table).
+  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.TableIdentifier -> org.hibernate.tool.reveng.api.core.TableIdentifier; its constructors are private -> TableIdentifier.create(catalog, schema, name) / create(Table).
   NOTE: CHANGED in 7: core's new Table(String) sets the *contributor* since 6.0, not the name (null above) -> new Table(contributor, name).
 
 === [Row 54] TableNameQualifier.qualify(catalog, schema, table) ===
   qualify(null, "PUBLIC", "EMPLOYEE")            : PUBLIC.EMPLOYEE
   qualify("HR", "PUBLIC", "EMPLOYEE")            : HR.PUBLIC.EMPLOYEE
-  NOTE: CHANGED in 7: org.hibernate.tool.util.TableNameQualifier -> org.hibernate.tool.internal.util.TableNameQualifier.
+  NOTE: CHANGED in 7: org.hibernate.tool.util.TableNameQualifier -> org.hibernate.tool.reveng.internal.util.TableNameQualifier.
 
 === [Row 53] NameConverter (was ReverseEngineeringStrategyUtil) — naming helpers ===
   toUpperCamelCase("EMPLOYEE_DETAIL")            : EmployeeDetail
@@ -455,7 +455,7 @@ WARN error - user lacks privilege or object not found: NO_SUCH_TABLE
   simplePluralize("category")                    : categories
   simplePluralize("address")                     : addresses
   isReservedJavaKeyword("class")                 : true
-  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.ReverseEngineeringStrategyUtil -> org.hibernate.tool.internal.util.NameConverter (same static methods).
+  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.ReverseEngineeringStrategyUtil -> org.hibernate.tool.reveng.internal.util.NameConverter (same static methods).
 
 === [Row 41/42] DefaultStrategy (was DefaultReverseEngineeringStrategy) — built-in naming and type mapping ===
   tableToClassName(EMPLOYEE_DETAIL)              : EmployeeDetail
@@ -465,7 +465,7 @@ WARN error - user lacks privilege or object not found: NO_SUCH_TABLE
   columnToHibernateTypeName INTEGER not-null     : int
   excludeTable(EMPLOYEE_DETAIL)                  : false
   getSchemaSelections()                          : null
-  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.ReverseEngineeringStrategy -> org.hibernate.tool.api.reveng.RevengStrategy, DefaultReverseEngineeringStrategy -> org.hibernate.tool.internal.reveng.strategy.DefaultStrategy (same logic).
+  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.ReverseEngineeringStrategy -> org.hibernate.tool.reveng.api.core.RevengStrategy, DefaultReverseEngineeringStrategy -> org.hibernate.tool.reveng.internal.core.strategy.DefaultStrategy (same logic).
 
 === [Row 44] RevengSettings (was ReverseEngineeringSettings) — package, detect many-to-many / one-to-one / optimistic lock ===
   getDefaultPackageName()                        : com.demo.hr
@@ -473,13 +473,13 @@ WARN error - user lacks privilege or object not found: NO_SUCH_TABLE
   getDetectOptimsticLock() (sic)                 : true
   tableToClassName(EMPLOYEE_DETAIL) now          : com.demo.hr.EmployeeDetail
   NOTE: wmstdappdbimpl sets the same settings object on both the default (innermost) strategy and the outer one.
-  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.ReverseEngineeringSettings -> org.hibernate.tool.api.reveng.RevengSettings (same fluent setters; the getDetectOptimsticLock typo is still there).
+  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.ReverseEngineeringSettings -> org.hibernate.tool.reveng.api.core.RevengSettings (same fluent setters; the getDetectOptimsticLock typo is still there).
 
 === [Row 46] TableFilter — include/exclude by catalog/schema/name pattern ===
   filter                                         : .* PUBLIC AUDIT_.* true
   exclude(PUBLIC.AUDIT_LOG)                      : true
   exclude(PUBLIC.EMPLOYEE)                       : null   (null = this filter has no opinion)
-  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.TableFilter -> org.hibernate.tool.internal.reveng.strategy.TableFilter (same code).
+  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.TableFilter -> org.hibernate.tool.reveng.internal.core.strategy.TableFilter (same code).
 
 === [Row 45] OverrideRepository — filters + hibernate.reveng.xml on top of a delegate strategy ===
   hibernate.reveng.xml used:
@@ -489,11 +489,11 @@ WARN error - user lacks privilege or object not found: NO_SUCH_TABLE
         <sql-type jdbc-type="NVARCHAR" hibernate-type="string"/>
       </type-mapping>
     </hibernate-reverse-engineering>
-  strategy class                                 : org.hibernate.tool.internal.reveng.strategy.OverrideRepository$2
+  strategy class                                 : org.hibernate.tool.reveng.internal.core.strategy.OverrideRepository$2
   excludeTable(PUBLIC.AUDIT_LOG)                 : true
   columnToHibernateTypeName VARCHAR(1000)        : text   (default strategy said: string)
   getSchemaSelections()                          : 1 selection(s), schema PUBLIC
-  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.OverrideRepository -> org.hibernate.tool.internal.reveng.strategy.OverrideRepository; addInputStream(..) no longer closes the stream (caller uses try-with-resources); new SchemaSelection(catalog, schema) -> RevengStrategy.SchemaSelection is an interface (RevengSupport.schemaSelection).
+  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.OverrideRepository -> org.hibernate.tool.reveng.internal.core.strategy.OverrideRepository; addInputStream(..) no longer closes the stream (caller uses try-with-resources); new SchemaSelection(catalog, schema) -> RevengStrategy.SchemaSelection is an interface (RevengSupport.schemaSelection).
 
 === [Row 43] DelegatingStrategy (was DelegatingReverseEngineeringStrategy) — DemoRevengStrategy overrides a few methods ===
   strategy class                                 : h5.concepts.support.DemoRevengStrategy
@@ -504,10 +504,10 @@ WARN error - user lacks privilege or object not found: NO_SUCH_TABLE
   getTableIdentifierProperties(EMPLOYEE)         : {schema=PUBLIC, sequence_name=EMP_SEQ}
   excludeTable(AUDIT_LOG) (delegated)            : true
   Chain: DemoRevengStrategy -> OverrideRepository strategy -> DefaultStrategy
-  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.DelegatingReverseEngineeringStrategy -> org.hibernate.tool.internal.reveng.strategy.DelegatingStrategy (constructor takes a RevengStrategy).
+  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.DelegatingReverseEngineeringStrategy -> org.hibernate.tool.reveng.internal.core.strategy.DelegatingStrategy (constructor takes a RevengStrategy).
 
 === [Row 39/40] MetadataDescriptorFactory.createReverseEngineeringDescriptor(strategy, properties) — a MetadataDescriptor ===
-  descriptor class                               : org.hibernate.tool.internal.metadata.RevengMetadataDescriptor
+  descriptor class                               : org.hibernate.tool.reveng.internal.metadata.RevengMetadataDescriptor
   getProperties().hibernatetool.metadatadialect  : h5.concepts.support.DemoMetaDataDialect
   getProperties() also has System/Environment props : 63 entries
   NOTE: CHANGED in 7: new JdbcMetadataDescriptor(strategy, props, preferBasicCompositeIds) -> MetadataDescriptorFactory.createReverseEngineeringDescriptor(strategy, props) (a RevengMetadataDescriptor); preferBasicCompositeIds is now the property MetadataConstants.PREFER_BASIC_COMPOSITE_IDS and must be a Boolean.
@@ -555,11 +555,11 @@ WARNING BinderUtils - Binding column twice should not happen. Column(EMP_ID)
 ####################################################################################################
 
 === [Row 48] RevengDialect (was MetaDataDialect) selection — property hibernatetool.metadatadialect, else from the SQL Dialect ===
-  HSQLDialect, no property                       : org.hibernate.tool.internal.reveng.dialect.HSQLMetaDataDialect
-  MySQLDialect, no property                      : org.hibernate.tool.internal.reveng.dialect.MySQLMetaDataDialect
-  OracleDialect, no property                     : org.hibernate.tool.internal.reveng.dialect.OracleMetaDataDialect
+  HSQLDialect, no property                       : org.hibernate.tool.reveng.internal.core.dialect.HSQLMetaDataDialect
+  MySQLDialect, no property                      : org.hibernate.tool.reveng.internal.core.dialect.MySQLMetaDataDialect
+  OracleDialect, no property                     : org.hibernate.tool.reveng.internal.core.dialect.OracleMetaDataDialect
   HSQLDialect, property = DemoMetaDataDialect    : h5.concepts.support.DemoMetaDataDialect
-  NOTE: CHANGED in 7: org.hibernate.cfg.MetaDataDialectFactory -> org.hibernate.tool.api.reveng.RevengDialectFactory; org.hibernate.cfg.reveng.dialect.MetaDataDialect -> org.hibernate.tool.api.reveng.RevengDialect; configure(ReverseEngineeringRuntimeInfo) -> configure(ConnectionProvider) (runtime-info class removed). HSQLDialect now gets its own HSQLMetaDataDialect.
+  NOTE: CHANGED in 7: org.hibernate.cfg.MetaDataDialectFactory -> org.hibernate.tool.reveng.api.core.RevengDialectFactory; org.hibernate.cfg.reveng.dialect.MetaDataDialect -> org.hibernate.tool.reveng.api.core.RevengDialect; configure(ReverseEngineeringRuntimeInfo) -> configure(ConnectionProvider) (runtime-info class removed). HSQLDialect now gets its own HSQLMetaDataDialect.
 WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
 
 === [Row 50] JDBCMetaDataDialect.getTables(null, PUBLIC, null) — TABLEs and VIEWs ===
@@ -593,7 +593,7 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
     TABLE_NAME=DEPARTMENT  HIBERNATE_STRATEGY=null  
   needQuote("EMPLOYEE") / needQuote("my table")  : false / true
   is an AbstractMetaDataDialect                  : true
-  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.dialect.{Abstract,JDBC}MetaDataDialect -> org.hibernate.tool.internal.reveng.dialect.*; same row maps and keys.
+  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.dialect.{Abstract,JDBC}MetaDataDialect -> org.hibernate.tool.reveng.internal.core.dialect.*; same row maps and keys.
 
 === [Row 49/52] DemoMetaDataDialect (extends JDBCMetaDataDialect) — overridden getTables, TABLE only ===
     TABLE_NAME=AUDIT_LOG  TABLE_TYPE=TABLE  
@@ -607,7 +607,7 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
   NOTE: REMOVED in 7: AbstractMetaDataDialect.getSQLExceptionConverter() (Tools 6) -> new SqlExceptionHelper(false).convert(sqlException, message, sql) in the custom dialect.
 
 === [Row 51] MySQLMetaDataDialect — MySQL-only SQL; run against HSQLDB to show the error path ===
-  superclass                                     : org.hibernate.tool.internal.reveng.dialect.JDBCMetaDataDialect
+  superclass                                     : org.hibernate.tool.reveng.internal.core.dialect.JDBCMetaDataDialect
   getTables/getColumns: same as JDBCMetaDataDialect but null patterns become '%' (works on HSQLDB too):
     COLUMN_NAME=PROJECT_ID  TYPE_NAME=INTEGER  
     COLUMN_NAME=TITLE  TYPE_NAME=VARCHAR  
@@ -621,7 +621,7 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
     {name=Engineering, budget=500000.00}
     {name=Sales, budget=200000.00}
   statement.isClosed() after iterator.close()    : true
-  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.dialect.ResultSetIterator(Statement, ResultSet, SQLExceptionConverter) -> org.hibernate.tool.internal.reveng.dialect.ResultSetIterator(Statement, ResultSet); handleSQLException converts itself.
+  NOTE: CHANGED in 7: org.hibernate.cfg.reveng.dialect.ResultSetIterator(Statement, ResultSet, SQLExceptionConverter) -> org.hibernate.tool.reveng.internal.core.dialect.ResultSetIterator(Statement, ResultSet); handleSQLException converts itself.
 
 === [Row 38] SQLExceptionConverter.convert(SQLException, message, sql) — SQLState decides the type ===
   converter class                                : org.hibernate.exception.internal.StandardSQLExceptionConverter
@@ -638,12 +638,12 @@ WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explic
 === [Row 55] AbstractExporter — output directory, metadata descriptor, template path, properties ===
   exporter is an AbstractExporter                : true
   DESTINATION_FOLDER                             : <project>/build/export-out
-  NOTE: CHANGED in 7: org.hibernate.tool.hbm2x.AbstractExporter -> org.hibernate.tool.internal.export.common.AbstractExporter; setOutputDirectory/setMetadataDescriptor/setTemplatePath -> getProperties().put(ExporterConstants.DESTINATION_FOLDER (File) / METADATA_DESCRIPTOR / TEMPLATE_PATH (String[]), value); getOutputDirectory() is protected now.
+  NOTE: CHANGED in 7: org.hibernate.tool.hbm2x.AbstractExporter -> org.hibernate.tool.reveng.internal.export.common.AbstractExporter; setOutputDirectory/setMetadataDescriptor/setTemplatePath -> getProperties().put(ExporterConstants.DESTINATION_FOLDER (File) / METADATA_DESCRIPTOR / TEMPLATE_PATH (String[]), value); getOutputDirectory() is protected now.
 
 === [Row 56] GenericExporter — template + file pattern, for-each entity ===
   TEMPLATE_NAME                                  : templates/entity-summary.ftl
   FILE_PATTERN                                   : {package-name}/{class-name}.summary.txt
-  NOTE: CHANGED in 7: org.hibernate.tool.hbm2x.GenericExporter -> org.hibernate.tool.internal.export.common.GenericExporter; setTemplateName/setFilePattern/setForEach -> ExporterConstants.TEMPLATE_NAME/FILE_PATTERN/FOR_EACH properties; getTemplateName() is protected and getFilePattern() private, so they are read back from the properties.
+  NOTE: CHANGED in 7: org.hibernate.tool.hbm2x.GenericExporter -> org.hibernate.tool.reveng.internal.export.common.GenericExporter; setTemplateName/setFilePattern/setForEach -> ExporterConstants.TEMPLATE_NAME/FILE_PATTERN/FOR_EACH properties; getTemplateName() is protected and getFilePattern() private, so they are read back from the properties.
   exporter.start() ...
 WARN deprecation - HHH90000025: HSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
 WARNING BinderUtils - Binding column twice should not happen. Column(DEPT_ID)
@@ -677,9 +677,10 @@ WARNING BinderUtils - Binding column twice should not happen. Column(EMP_ID)
   isComponent() / hasIdentifierProperty()        : false / true
   getDecoratedObject()                           : org.hibernate.mapping.RootClass
   resolveFilename ->                             : com/demo/hr/EmployeeDetailEntity.summary.txt
+  NOTE: CHANGED in 7.4: start() ends with stop(), which closes the service registry the exporter's Metadata was built with. Up to 7.3 that registry had to be destroyed by hand through MetadataImpl.getBootstrapContext(); now getMetadata() after start() would reverse-engineer the schema again. start(false) skips the stop.
   resolveFilename(POJOClass) calls               : 4
   resolveFilename(String) calls                  : 0   (an overload, not an override: Tools never calls it — same as WMGenericExporter)
-  NOTE: CHANGED in 7: org.hibernate.tool.hbm2x.pojo.POJOClass -> org.hibernate.tool.internal.export.java.POJOClass (same methods); resolveFilename(POJOClass) is still the overridable extension point.
+  NOTE: CHANGED in 7: org.hibernate.tool.hbm2x.pojo.POJOClass -> org.hibernate.tool.reveng.internal.export.java.POJOClass (same methods); resolveFilename(POJOClass) is still the overridable extension point.
   NOTE: CHANGED in 7: getQualifiedDeclarationName() prefixes the mapped class's package to the already qualified class name (com.demo.hr.com.demo.hr.XEntity); Tools 5.6 had that condition inverted and returned com.demo.hr.XEntity. Use getPackageName() + "." + getDeclarationName() for the plain qualified name.
 
 === [Row 56] Files written ===
@@ -709,7 +710,7 @@ WARNING BinderUtils - Binding column twice should not happen. Column(EMP_ID)
     |   projectEntities : java.util.Set<com.demo.hr.ProjectEntity>
 
 === [Row 58] org.hibernate.tool.hbm2x.ant.ConfigurationTask ===
-  Only a stale Javadoc @see in wmstdappdbimpl's ConfigurationBuilder; the class is not in Tools 5.6.15 (nor in tools-orm 7.3.13). Nothing to run.
+  Only a stale Javadoc @see in wmstdappdbimpl's ConfigurationBuilder; the class is not in Tools 5.6.15 (nor in hibernate-reveng 7.4.12). Nothing to run.
 
 ####################################################################################################
 #  Summary
